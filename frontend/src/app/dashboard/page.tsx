@@ -17,8 +17,8 @@ function CitoyenDashboard() {
   const { favoris } = useFavorites();
 
   const quickActions = [
-    { href: ROUTES.ANNUAIRE, icon: Search, label: "Chercher un artisan" },
-    { href: ROUTES.FAVORIS, icon: Heart, label: 'Mes favoris' },
+    { href: ROUTES.DASHBOARD_ANNUAIRE, icon: Search, label: "Chercher un artisan" },
+    { href: ROUTES.DASHBOARD_FAVORIS, icon: Heart, label: 'Mes favoris' },
     { href: ROUTES.DASHBOARD_PROFIL, icon: Star, label: 'Modifier mon profil' },
   ];
 
@@ -163,7 +163,7 @@ function ArtisanDashboard() {
               {commerces.slice(0, 5).map((c) => (
                 <Link
                   key={c.id}
-                  href={ROUTES.COMMERCE(c.id)}
+                  href={ROUTES.DASHBOARD_COMMERCES}
                   className="flex items-center justify-between p-3 rounded-md border border-stone-200 hover:border-stone-400 transition-colors"
                 >
                   <div>

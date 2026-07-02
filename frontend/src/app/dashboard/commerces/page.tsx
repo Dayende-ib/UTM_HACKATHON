@@ -7,9 +7,11 @@ import { useAuthStore } from '@/stores/auth.store';
 import { commerceService } from '@/services/commerce.service';
 import { categorieService } from '@/services/categorie.service';
 import { uploadService } from '@/services/upload.service';
+import { geolocationService } from '@/services/geolocation.service';
 import { useToast } from '@/components/ui/toast';
 import { ROUTES } from '@/constants/routes';
-import { Plus, Edit2, Trash2, Eye, Star, X, Store, Loader2, ImagePlus } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, Star, X, Store, Loader2, ImagePlus, LocateFixed, MapPin } from 'lucide-react';
+import MapLeaflet from '@/components/maps/map-leaflet';
 import type { Commerce, Categorie } from '@/types/commerce';
 
 // Coordonnées par défaut (centre de Ouagadougou) tant qu'aucun géocodage n'est fait.
@@ -40,7 +42,11 @@ export default function CommercesPage() {
     ville: '',
     telephone: '',
     photos: [] as string[],
+    latitude: DEFAULT_COORDS.latitude,
+    longitude: DEFAULT_COORDS.longitude,
   });
+  const [locating, setLocating] = useState(false);
+  const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -60,6 +66,7 @@ export default function CommercesPage() {
   }, []);
 
   const handleOpenModal = (commerce?: Commerce) => {
+    setResolvedAddress(null);
     if (commerce) {
       setEditingCommerce(commerce);
       setFormData({
@@ -70,12 +77,45 @@ export default function CommercesPage() {
         ville: commerce.ville,
         telephone: commerce.telephone,
         photos: commerce.photos ?? [],
+        latitude: commerce.latitude ?? DEFAULT_COORDS.latitude,
+        longitude: commerce.longitude ?? DEFAULT_COORDS.longitude,
       });
     } else {
       setEditingCommerce(null);
-      setFormData({ nom: '', description: '', categorieId: '', adresse: '', ville: '', telephone: '', photos: [] });
+      setFormData({
+        nom: '', description: '', categorieId: '', adresse: '', ville: '', telephone: '', photos: [],
+        latitude: DEFAULT_COORDS.latitude, longitude: DEFAULT_COORDS.longitude,
+      });
     }
     setShowModal(true);
+  };
+
+  // Position choisie sur la carte ou via la géolocalisation : met à jour le
+  // formulaire et propose l'adresse résolue (sans écraser une adresse déjà saisie).
+  const setPosition = async (lat: number, lng: number) => {
+    setFormData((p) => ({ ...p, latitude: lat, longitude: lng }));
+    try {
+      const result = await geolocationService.reverseGeocode(lat, lng);
+      if (result) {
+        setResolvedAddress(result.displayName);
+        setFormData((p) => (p.adresse ? p : { ...p, adresse: result.displayName }));
+      }
+    } catch {
+      /* géocodage inverse best-effort */
+    }
+  };
+
+  const handleUseMyLocation = async () => {
+    setLocating(true);
+    try {
+      const { coordinates } = await geolocationService.getCurrentPosition();
+      await setPosition(coordinates.latitude, coordinates.longitude);
+      toast('success', 'Position actuelle utilisée.');
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : "Impossible d'obtenir votre position.");
+    } finally {
+      setLocating(false);
+    }
   };
 
   const handleUploadPhotos = async (files: FileList | null) => {
@@ -107,7 +147,7 @@ export default function CommercesPage() {
         setCommerces((prev) => prev.map((c) => (c.id === editingCommerce.id ? updated : c)));
         toast('success', 'Commerce mis à jour.');
       } else {
-        const created = await commerceService.create({ ...formData, ...DEFAULT_COORDS }, user.id);
+        const created = await commerceService.create(formData, user.id);
         setCommerces((prev) => [created, ...prev]);
         toast('success', 'Commerce créé.');
       }
@@ -336,6 +376,45 @@ export default function CommercesPage() {
                     placeholder="+226 XX XX XX XX"
                   />
                 </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-medium text-stone-800">Localisation</label>
+                  <button
+                    type="button"
+                    onClick={handleUseMyLocation}
+                    disabled={locating}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-600 hover:text-stone-900 disabled:opacity-50"
+                  >
+                    {locating ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <LocateFixed className="h-3.5 w-3.5" />
+                    )}
+                    Utiliser ma position
+                  </button>
+                </div>
+                <div className="rounded-md overflow-hidden border border-stone-300">
+                  <MapLeaflet
+                    className="h-48 w-full"
+                    center={[formData.latitude, formData.longitude]}
+                    zoom={14}
+                    markers={[{
+                      id: 'position',
+                      position: [formData.latitude, formData.longitude],
+                      nom: formData.nom || 'Position du commerce',
+                    }]}
+                    onMapClick={setPosition}
+                  />
+                </div>
+                <p className="text-xs text-stone-400 mt-1.5 flex items-start gap-1">
+                  <MapPin className="h-3.5 w-3.5 shrink-0 mt-px" />
+                  Cliquez sur la carte pour placer précisément votre commerce.
+                </p>
+                {resolvedAddress && (
+                  <p className="text-xs text-stone-500 mt-1 truncate">📍 {resolvedAddress}</p>
+                )}
               </div>
 
               <div>

@@ -37,8 +37,9 @@ Le schéma est versionné dans `backend/supabase/migrations/` (ordre = dépendan
 - `009_enrich_utilisateurs.sql` — un artisan par ville (au lieu de 3 artisans de Ouaga possédant des commerces partout), 5 citoyens supplémentaires, avis sur les commerces multi-villes
 - `010_merge_duplicate_categories.sql` — fusionne 7 catégories dupliquées (ex. `coiffeur`/`coiffure`) issues d'un second jeu de données mal encodé déjà présent en base ; corrige le texte corrompu des catégories restantes sans équivalent
 - `011_commerce_events.sql` — table `commerce_events` (horodatage vue/appel/whatsapp) pour le graphique d'évolution des statistiques artisan
+- `012_fix_demo_user_roles.sql` — force le profil (rôle/nom/prénom) des 3 comptes de démo créés par `008` (upsert, corrige une exécution partielle antérieure de `008` où `ON CONFLICT DO NOTHING` avait laissé les comptes sans profil → repli silencieux sur le rôle `citoyen`)
 
-> Migrations idempotentes : rejouables sans erreur (colonnes réconciliées via `ADD COLUMN IF NOT EXISTS`, policies via `DROP POLICY IF EXISTS`, seeds guardés). Appliquer dans l'ordre `000 → 011`.
+> Migrations idempotentes : rejouables sans erreur (colonnes réconciliées via `ADD COLUMN IF NOT EXISTS`, policies via `DROP POLICY IF EXISTS`, seeds guardés). Appliquer dans l'ordre `000 → 012`.
 
 ### Comptes de démo (après migration `008`)
 

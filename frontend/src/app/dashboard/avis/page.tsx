@@ -73,7 +73,7 @@ export default function MesAvisPage() {
             Vos avis sur les artisans apparaîtront ici.
           </p>
           <Link
-            href={ROUTES.ANNUAIRE}
+            href={ROUTES.DASHBOARD_ANNUAIRE}
             className="inline-flex items-center gap-2 h-9 px-4 bg-stone-900 hover:bg-stone-800 text-white font-medium rounded-md text-sm transition-colors"
           >
             Parcourir l&apos;annuaire

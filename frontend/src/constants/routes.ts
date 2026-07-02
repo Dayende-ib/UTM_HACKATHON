@@ -12,6 +12,8 @@ export const ROUTES = {
   DASHBOARD_COMMERCES: '/dashboard/commerces',
   DASHBOARD_STATISTIQUES: '/dashboard/statistiques',
   DASHBOARD_AVIS: '/dashboard/avis',
+  DASHBOARD_FAVORIS: '/dashboard/favoris',
+  DASHBOARD_ANNUAIRE: '/dashboard/annuaire',
   DASHBOARD_PROFIL: '/dashboard/profil',
   ADMIN: '/admin',
   ADMIN_UTILISATEURS: '/admin/utilisateurs',

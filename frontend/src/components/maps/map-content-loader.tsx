@@ -10,6 +10,8 @@ interface MapContentLoaderProps {
   markers?: MapMarker[];
   userLocation?: { latitude: number; longitude: number } | null;
   onMarkerClick?: (id: string) => void;
+  /** Si fourni, un clic sur la carte renvoie ses coordonnées (sélection de position). */
+  onMapClick?: (lat: number, lng: number) => void;
   center?: [number, number];
   zoom?: number;
   className?: string;
@@ -83,6 +85,7 @@ export default function MapContentLoader({
   markers = [],
   userLocation,
   onMarkerClick,
+  onMapClick,
   center = OUAGADOUGOU_CENTER,
   zoom = DEFAULT_ZOOM,
 }: MapContentLoaderProps) {
@@ -90,6 +93,12 @@ export default function MapContentLoader({
   const mapInstanceRef = useRef<LeafletMap | null>(null);
   const markerLayerRef = useRef<LayerGroup | null>(null);
   const fitBoundsRef = useRef<(() => void) | null>(null);
+  // Ref plutôt que dépendance d'effet : évite de recréer la carte à chaque
+  // nouvelle identité de fonction `onMapClick` passée par le parent.
+  const onMapClickRef = useRef(onMapClick);
+  useEffect(() => {
+    onMapClickRef.current = onMapClick;
+  }, [onMapClick]);
 
   // Initialisation de la carte (une seule fois)
   useEffect(() => {
@@ -130,6 +139,10 @@ export default function MapContentLoader({
         },
       });
       map.addControl(new RecenterControl());
+
+      map.on("click", (e: { latlng: { lat: number; lng: number } }) => {
+        onMapClickRef.current?.(e.latlng.lat, e.latlng.lng);
+      });
 
       mapInstanceRef.current = map;
     });

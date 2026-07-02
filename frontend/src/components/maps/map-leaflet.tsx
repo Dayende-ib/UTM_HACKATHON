@@ -7,6 +7,8 @@ interface MapLeafletProps {
   markers?: MapMarker[];
   userLocation?: { latitude: number; longitude: number } | null;
   onMarkerClick?: (id: string) => void;
+  /** Si fourni, un clic sur la carte renvoie ses coordonnées (sélection de position). */
+  onMapClick?: (lat: number, lng: number) => void;
   className?: string;
   center?: [number, number];
   zoom?: number;

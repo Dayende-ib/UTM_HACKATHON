@@ -46,8 +46,8 @@ export default function Sidebar({ role, user, onLogout }: SidebarProps) {
 
   const citoyenLinks = [
     { href: ROUTES.DASHBOARD, icon: LayoutDashboard, label: 'Tableau de bord' },
-    { href: ROUTES.ANNUAIRE, icon: Search, label: 'Rechercher' },
-    { href: ROUTES.FAVORIS, icon: Heart, label: 'Mes favoris' },
+    { href: ROUTES.DASHBOARD_ANNUAIRE, icon: Search, label: 'Rechercher' },
+    { href: ROUTES.DASHBOARD_FAVORIS, icon: Heart, label: 'Mes favoris' },
     { href: ROUTES.DASHBOARD_AVIS, icon: Star, label: 'Mes avis' },
     { href: ROUTES.DASHBOARD_PROFIL, icon: User, label: 'Mon profil' },
   ];

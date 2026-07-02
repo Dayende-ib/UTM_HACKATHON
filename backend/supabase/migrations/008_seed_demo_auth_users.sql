@@ -93,11 +93,19 @@ BEGIN
   END IF;
 
   -- ─── Profils applicatifs (public.utilisateurs) ─────────────
+  -- DO UPDATE (pas DO NOTHING) : si une exécution précédente a créé les
+  -- comptes auth mais échoué/sauté cette partie, on veut que rejouer la
+  -- migration corrige les profils au lieu de rester bloqué sur un état
+  -- incomplet (rôle par défaut 'citoyen' côté /api/auth/connexion).
   INSERT INTO utilisateurs (id, nom, prenom, telephone, role) VALUES
     (v_admin_id,   'Admin',   'Démo', '+226 70 00 01 00', 'admin'),
     (v_artisan_id, 'Artisan', 'Démo', '+226 70 00 02 00', 'artisan'),
     (v_citoyen_id, 'Citoyen', 'Démo', '+226 70 00 03 00', 'citoyen')
-  ON CONFLICT (id) DO NOTHING;
+  ON CONFLICT (id) DO UPDATE SET
+    nom = EXCLUDED.nom,
+    prenom = EXCLUDED.prenom,
+    telephone = EXCLUDED.telephone,
+    role = EXCLUDED.role;
 
   -- Donne un commerce existant à artisan@test.com pour que le dashboard
   -- "Mes commerces" ne soit pas vide à la première connexion (no-op si déjà
