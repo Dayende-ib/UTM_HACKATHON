@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -31,12 +31,16 @@ export default function ConnexionPage() {
     resolver: zodResolver(connexionSchema),
   });
 
+  const searchParams = useSearchParams();
+
   const onSubmit = async (data: ConnexionFormValues) => {
     setFormError('');
     try {
       await login(data.email, data.password);
       const user = useAuthStore.getState().user;
-      router.push(user?.role === 'admin' ? ROUTES.ADMIN : ROUTES.DASHBOARD);
+      const redirect = searchParams.get('redirect');
+      const defaultRoute = user?.role === 'admin' ? ROUTES.ADMIN : ROUTES.DASHBOARD;
+      router.push(redirect || defaultRoute);
     } catch {
       setFormError('Identifiants incorrects. Veuillez réessayer.');
     }
