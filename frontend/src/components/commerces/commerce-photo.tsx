@@ -39,7 +39,13 @@ export function CommercePhoto({
   const src = fallbackSrc || pexels;
 
   if (!src) {
-    return <span className={`block bg-stone-100 ${className ?? ''}`} aria-hidden="true" />;
+    return (
+      <span className={`flex items-center justify-center bg-stone-100 ${className ?? ''}`}>
+        <span className="text-4xl font-bold text-stone-300" aria-hidden="true">
+          {alt.charAt(0)}
+        </span>
+      </span>
+    );
   }
 
   return (

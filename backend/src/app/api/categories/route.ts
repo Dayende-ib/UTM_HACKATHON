@@ -9,7 +9,7 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from('categories')
-      .select('id, nom, slug, description, icone, couleur')
+      .select('id, nom, slug, description, icone, couleur, nombre_commerces')
       .order('nom')
 
     if (q) {

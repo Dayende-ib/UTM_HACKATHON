@@ -22,7 +22,12 @@ export function CommerceCard({ commerce, distance }: CommerceCardProps) {
   const favori = isFavori(commerce.id);
 
   const photoUrl =
-    commerce.photos.length > 0 && !imgError ? commerce.photos[0] : null;
+    commerce.photos.length > 0 && !imgError ? commerce.photos[0] : "";
+
+  // Dérive un index stable depuis l'id pour varier les photos Pexels par carte
+  const pexelsIndex = commerce.id
+    .split('')
+    .reduce((acc, c) => acc + c.charCodeAt(0), 0) % 4;
 
   return (
     <Link
@@ -30,21 +35,14 @@ export function CommerceCard({ commerce, distance }: CommerceCardProps) {
       className="group block rounded-lg border border-stone-200 bg-white transition-colors hover:border-stone-400"
     >
       <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg bg-stone-100">
-        {photoUrl ? (
-          <CommercePhoto
-            categorieSlug={commerce.categorie?.slug}
-            fallbackSrc={photoUrl}
-            alt={commerce.nom}
-            className="h-full w-full object-cover"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-stone-100">
-            <span className="text-4xl font-bold text-stone-300">
-              {commerce.nom.charAt(0)}
-            </span>
-          </div>
-        )}
+        <CommercePhoto
+          categorieSlug={commerce.categorie?.slug}
+          fallbackSrc={photoUrl}
+          alt={commerce.nom}
+          index={pexelsIndex}
+          className="h-full w-full"
+          onError={() => setImgError(true)}
+        />
 
         <button
           onClick={(e) => {
