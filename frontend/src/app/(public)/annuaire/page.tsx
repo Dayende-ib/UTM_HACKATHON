@@ -119,7 +119,7 @@ export default function AnnuairePage() {
       setSearchQuery(result.texte || searchQuery);
       setSelectedCategory(categoryId);
       setCurrentPage(1);
-      toast('success', 'Recherche vocale appliquée à l'annuaire.');
+      toast('success', "Recherche vocale appliquée à l'annuaire.");
     }
     reset();
   }, [categories, reset, result, router, searchQuery, toast]);
