@@ -70,12 +70,12 @@ export default function DashboardLayout({
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
           <div className="h-full">
-            <Sidebar role="artisan" user={user} onLogout={handleLogout} />
+            <Sidebar role={user.role === 'artisan' ? 'artisan' : 'citoyen'} user={user} onLogout={handleLogout} />
           </div>
         </div>
 
         <div className="hidden lg:block">
-          <Sidebar role="artisan" user={user} onLogout={handleLogout} />
+          <Sidebar role={user.role === 'artisan' ? 'artisan' : 'citoyen'} user={user} onLogout={handleLogout} />
         </div>
 
         <main className="flex-1 min-h-[calc(100vh-4rem)] p-6 lg:p-8 bg-stone-50">

@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuthStore } from '@/stores/auth.store';
 import { commerceService } from '@/services/commerce.service';
 import { categorieService } from '@/services/categorie.service';
 import { uploadService } from '@/services/upload.service';
 import { useToast } from '@/components/ui/toast';
+import { ROUTES } from '@/constants/routes';
 import { Plus, Edit2, Trash2, Eye, Star, X, Store, Loader2, ImagePlus } from 'lucide-react';
 import type { Commerce, Categorie } from '@/types/commerce';
 
@@ -15,7 +17,14 @@ const DEFAULT_COORDS = { latitude: 12.3714, longitude: -1.5197 };
 
 export default function CommercesPage() {
   const { user } = useAuthStore();
+  const router = useRouter();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (user && user.role !== 'artisan') {
+      router.push(ROUTES.DASHBOARD);
+    }
+  }, [user, router]);
   const [commerces, setCommerces] = useState<Commerce[]>([]);
   const [categories, setCategories] = useState<Categorie[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +49,6 @@ export default function CommercesPage() {
       .getAll({ artisanId: user.id })
       .then((list) => !annule && setCommerces(list))
       .catch(() => !annule && toast('error', 'Erreur de chargement de vos commerces.'))
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       .finally(() => !annule && setLoading(false));
     return () => {
       annule = true;
@@ -132,6 +140,10 @@ export default function CommercesPage() {
       toast('error', 'Impossible de modifier le statut.');
     }
   };
+
+  if (user && user.role !== 'artisan') {
+    return null;
+  }
 
   return (
     <div className="space-y-6">

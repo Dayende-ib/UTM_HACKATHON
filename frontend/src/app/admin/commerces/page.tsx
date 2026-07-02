@@ -1,16 +1,34 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Trash2, CheckCircle, XCircle, Store } from "lucide-react";
+import { Search, Trash2, CheckCircle, XCircle, Store, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
 import { adminService } from "@/services/admin.service";
-import type { Commerce } from "@/types/commerce";
+import { categorieService } from "@/services/categorie.service";
+import type { Commerce, Categorie } from "@/types/commerce";
+
+const emptyForm = {
+  nom: "",
+  description: "",
+  categorieId: "",
+  adresse: "",
+  ville: "",
+  telephone: "",
+  whatsapp: "",
+  email: "",
+};
 
 export default function AdminCommercesPage() {
   const [search, setSearch] = useState("");
   const [items, setItems] = useState<Commerce[]>([]);
+  const [categories, setCategories] = useState<Categorie[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
 
   const fetchCommerces = async () => {
     try {
@@ -25,6 +43,7 @@ export default function AdminCommercesPage() {
 
   useEffect(() => {
     fetchCommerces();
+    categorieService.getAll().then(setCategories).catch(() => setCategories([]));
   }, []);
 
   const filtered = items.filter(
@@ -51,6 +70,42 @@ export default function AdminCommercesPage() {
       setItems((prev) => prev.filter((c) => c.id !== id));
     } catch (err) {
       console.error("Erreur suppression commerce:", err);
+    }
+  };
+
+  const openEdit = (c: Commerce) => {
+    setEditingId(c.id);
+    setForm({
+      nom: c.nom,
+      description: c.description || "",
+      categorieId: c.categorieId,
+      adresse: c.adresse,
+      ville: c.ville,
+      telephone: c.telephone || "",
+      whatsapp: c.whatsapp || "",
+      email: c.email || "",
+    });
+    setShowModal(true);
+  };
+
+  const save = async () => {
+    if (!editingId || !form.nom || !form.adresse || !form.ville) return;
+    setSaving(true);
+    try {
+      await adminService.updateCommerce(editingId, form);
+      const categorie = categories.find((cat) => cat.id === form.categorieId);
+      setItems((prev) =>
+        prev.map((c) =>
+          c.id === editingId
+            ? { ...c, ...form, categorie: categorie ?? c.categorie }
+            : c
+        )
+      );
+      setShowModal(false);
+    } catch (err) {
+      console.error("Erreur mise à jour commerce:", err);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -114,6 +169,9 @@ export default function AdminCommercesPage() {
                 <td className="px-5 py-4 text-stone-600">{c.nombreVues}</td>
                 <td className="px-5 py-4">
                   <div className="flex justify-end gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
+                      <Pencil className="h-4 w-4 text-stone-500" />
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => toggleStatus(c.id)}>
                       {c.estPublic ? (
                         <XCircle className="h-4 w-4 text-primary-500" />
@@ -143,6 +201,10 @@ export default function AdminCommercesPage() {
             </div>
             <p className="text-sm text-stone-500">{c.ville}</p>
             <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => openEdit(c)}>
+                <Pencil className="h-3.5 w-3.5 mr-1" />
+                Modifier
+              </Button>
               <Button variant="outline" size="sm" onClick={() => toggleStatus(c.id)}>
                 {c.estPublic ? "Retirer" : "Publier"}
               </Button>
@@ -162,6 +224,99 @@ export default function AdminCommercesPage() {
           <p className="text-stone-500 font-medium">Aucun commerce trouvé</p>
         </div>
       )}
+
+      <Modal open={showModal} onClose={() => setShowModal(false)} title="Modifier le commerce" size="lg">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-1.5">Nom</label>
+            <input
+              type="text"
+              value={form.nom}
+              onChange={(e) => setForm((p) => ({ ...p, nom: e.target.value }))}
+              className="w-full rounded-lg border border-stone-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400/30 focus:border-primary-400"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-1.5">Description</label>
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+              rows={3}
+              className="w-full rounded-lg border border-stone-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400/30 focus:border-primary-400 resize-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-1.5">Catégorie</label>
+            <select
+              value={form.categorieId}
+              onChange={(e) => setForm((p) => ({ ...p, categorieId: e.target.value }))}
+              className="w-full rounded-lg border border-stone-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400/30 focus:border-primary-400"
+            >
+              <option value="">Sélectionner une catégorie</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>{cat.nom}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-1.5">Adresse</label>
+            <input
+              type="text"
+              value={form.adresse}
+              onChange={(e) => setForm((p) => ({ ...p, adresse: e.target.value }))}
+              className="w-full rounded-lg border border-stone-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400/30 focus:border-primary-400"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">Ville</label>
+              <input
+                type="text"
+                value={form.ville}
+                onChange={(e) => setForm((p) => ({ ...p, ville: e.target.value }))}
+                className="w-full rounded-lg border border-stone-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400/30 focus:border-primary-400"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">Téléphone</label>
+              <input
+                type="tel"
+                value={form.telephone}
+                onChange={(e) => setForm((p) => ({ ...p, telephone: e.target.value }))}
+                className="w-full rounded-lg border border-stone-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400/30 focus:border-primary-400"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">WhatsApp</label>
+              <input
+                type="tel"
+                value={form.whatsapp}
+                onChange={(e) => setForm((p) => ({ ...p, whatsapp: e.target.value }))}
+                className="w-full rounded-lg border border-stone-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400/30 focus:border-primary-400"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">Email</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                className="w-full rounded-lg border border-stone-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400/30 focus:border-primary-400"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setShowModal(false)}>
+              Annuler
+            </Button>
+            <Button onClick={save} disabled={saving}>
+              {saving ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -6,22 +6,27 @@ export async function GET(request: Request) {
     const supabase = createServiceClient()
     const { searchParams } = new URL(request.url)
     const commerce_id = searchParams.get('commerce_id') || searchParams.get('commerceId')
+    const user_id = searchParams.get('user_id') || searchParams.get('userId')
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
 
-    if (!commerce_id) {
-      return Response.json({ error: 'commerce_id requis' }, { status: 400 })
+    if (!commerce_id && !user_id) {
+      return Response.json({ error: 'commerce_id ou user_id requis' }, { status: 400 })
     }
 
     const from = (page - 1) * limit
     const to = from + limit - 1
 
-    const { data, error, count } = await supabase
+    let query = supabase
       .from('avis')
-      .select('*, utilisateurs(id, nom)', { count: 'exact' })
-      .eq('commerce_id', commerce_id)
+      .select('*, utilisateurs(id, nom), commerces(id, nom, ville)', { count: 'exact' })
       .range(from, to)
       .order('created_at', { ascending: false })
+
+    if (commerce_id) query = query.eq('commerce_id', commerce_id)
+    if (user_id) query = query.eq('user_id', user_id)
+
+    const { data, error, count } = await query
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 })
@@ -29,6 +34,7 @@ export async function GET(request: Request) {
 
     const avis = (data || []).map((row) => {
       const user = row.utilisateurs
+      const commerce = row.commerces
       return {
         id: row.id,
         texte: row.commentaire,
@@ -36,6 +42,7 @@ export async function GET(request: Request) {
         auteurId: row.user_id,
         auteur: user ? { nom: user.nom } : undefined,
         commerceId: row.commerce_id,
+        commerce: commerce ? { id: commerce.id, nom: commerce.nom, ville: commerce.ville } : undefined,
         iaScore: row.score_sentiment,
         estSpam: row.is_spam,
         estModer: !row.is_spam,

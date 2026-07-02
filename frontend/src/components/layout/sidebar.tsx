@@ -16,11 +16,14 @@ import {
   Settings,
   MessageSquare,
   Shield,
+  Heart,
+  Search,
+  Star,
 } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 
 interface SidebarProps {
-  role: 'artisan' | 'admin';
+  role: 'artisan' | 'admin' | 'citoyen';
   user?: {
     nom: string;
     prenom: string;
@@ -41,6 +44,14 @@ export default function Sidebar({ role, user, onLogout }: SidebarProps) {
     { href: ROUTES.DASHBOARD_PROFIL, icon: User, label: 'Mon profil' },
   ];
 
+  const citoyenLinks = [
+    { href: ROUTES.DASHBOARD, icon: LayoutDashboard, label: 'Tableau de bord' },
+    { href: ROUTES.ANNUAIRE, icon: Search, label: 'Rechercher' },
+    { href: ROUTES.FAVORIS, icon: Heart, label: 'Mes favoris' },
+    { href: ROUTES.DASHBOARD_AVIS, icon: Star, label: 'Mes avis' },
+    { href: ROUTES.DASHBOARD_PROFIL, icon: User, label: 'Mon profil' },
+  ];
+
   const adminLinks = [
     { href: ROUTES.ADMIN, icon: LayoutDashboard, label: 'Tableau de bord' },
     { href: ROUTES.ADMIN_UTILISATEURS, icon: Users, label: 'Utilisateurs' },
@@ -50,7 +61,7 @@ export default function Sidebar({ role, user, onLogout }: SidebarProps) {
     { href: ROUTES.ADMIN_SIGNALEMENTS, icon: Shield, label: 'Signalements' },
   ];
 
-  const links = role === 'admin' ? adminLinks : artisanLinks;
+  const links = role === 'admin' ? adminLinks : role === 'citoyen' ? citoyenLinks : artisanLinks;
 
   return (
     <aside

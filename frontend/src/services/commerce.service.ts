@@ -3,6 +3,13 @@ import { apiFetch } from '@/lib/api-client';
 
 const API = '/api/commerces';
 
+export interface DayStats {
+  date: string;
+  vues: number;
+  appels: number;
+  whatsapp: number;
+}
+
 export function mapCommerce(row: Record<string, unknown>): Commerce {
   const categories = row.categories as Record<string, unknown> | null;
   const artisans = row.utilisateurs as Record<string, unknown> | null;
@@ -120,5 +127,12 @@ export const commerceService = {
 
   incrementWhatsAppClick(id: string): Promise<void> {
     return this.incrementStat(id, 'whatsapp');
+  },
+
+  async getStatsEvolution(id: string, days = 7): Promise<DayStats[]> {
+    const data = await apiFetch<{ days: DayStats[] }>(`${API}/${id}/stats/evolution`, {
+      query: { days },
+    });
+    return data.days || [];
   },
 };

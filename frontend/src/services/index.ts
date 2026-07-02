@@ -1,6 +1,6 @@
 export { authService } from './auth.service';
 export { commerceService } from './commerce.service';
-export type { CommerceFilters } from './commerce.service';
+export type { CommerceFilters, DayStats } from './commerce.service';
 export { commentaireService } from './commentaire.service';
 export { uploadService } from './upload.service';
 export type { UploadResult } from './upload.service';
@@ -14,3 +14,5 @@ export { adminService } from './admin.service';
 export type { AdminStats } from './admin.service';
 export { statistiquesService } from './statistiques.service';
 export type { StatistiqueItem, PeriodStats } from './statistiques.service';
+export { utilisateurService } from './utilisateur.service';
+export type { UpdateProfileData, UpdatedProfile } from './utilisateur.service';

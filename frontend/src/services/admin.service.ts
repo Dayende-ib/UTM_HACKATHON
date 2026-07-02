@@ -115,6 +115,26 @@ export const adminService = {
     });
   },
 
+  async updateCommerce(
+    id: string,
+    data: {
+      nom?: string;
+      description?: string;
+      categorieId?: string;
+      adresse?: string;
+      ville?: string;
+      telephone?: string;
+      whatsapp?: string;
+      email?: string;
+    }
+  ): Promise<{ success: boolean; commerce: Record<string, unknown> }> {
+    return apiFetch(`/api/admin/commerces/${id}`, {
+      method: 'PUT',
+      auth: true,
+      body: data,
+    });
+  },
+
   async deleteCommerce(id: string): Promise<void> {
     return apiFetch(`/api/admin/commerces/${id}`, {
       method: 'DELETE',

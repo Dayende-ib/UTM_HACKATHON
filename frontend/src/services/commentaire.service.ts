@@ -9,6 +9,11 @@ export const commentaireService = {
     return data.avis || [];
   },
 
+  async getByUserId(userId: string): Promise<Commentaire[]> {
+    const data = await apiFetch<{ avis: Commentaire[] }>(API, { query: { userId } });
+    return data.avis || [];
+  },
+
   async create(data: {
     texte: string;
     note: number;

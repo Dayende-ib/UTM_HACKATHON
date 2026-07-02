@@ -50,6 +50,10 @@ export async function POST(
       return Response.json({ error: updateError.message }, { status: 500 })
     }
 
+    // Horodate l'évènement pour permettre un graphique d'évolution
+    // (le compteur cumulé ci-dessus ne garde pas l'historique dans le temps).
+    await supabase.from('commerce_events').insert({ commerce_id: (await params).id, type })
+
     return Response.json({ [column]: nextValue })
   } catch (error) {
     console.error('[/api/commerces/[id]/stats]', error)

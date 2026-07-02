@@ -17,6 +17,7 @@ interface AuthState {
   }) => Promise<void>;
   logout: () => void;
   resetPassword: (email: string) => Promise<void>;
+  updateUser: (partial: Partial<User>) => void;
 }
 
 function loadUser(): User | null {
@@ -89,5 +90,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true });
     await authService.resetPassword(email);
     set({ isLoading: false });
+  },
+
+  updateUser: (partial) => {
+    set((state) => {
+      if (!state.user) return state;
+      const user = { ...state.user, ...partial };
+      saveUser(user);
+      return { user };
+    });
   },
 }));

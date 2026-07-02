@@ -3,37 +3,67 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useAuthStore } from '@/stores/auth.store';
-import { Camera, Lock, Trash2, Save } from 'lucide-react';
+import { utilisateurService } from '@/services/utilisateur.service';
+import { useToast } from '@/components/ui/toast';
+import { Camera, Lock, Trash2, Save, Loader2 } from 'lucide-react';
 
 export default function ProfilPage() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, updateUser } = useAuthStore();
+  const { toast } = useToast();
   const [form, setForm] = useState({
     prenom: user?.prenom || '',
     nom: user?.nom || '',
-    email: user?.email || '',
     telephone: user?.telephone || '',
   });
   const [passwords, setPasswords] = useState({
-    current: '',
     newPass: '',
     confirmPassword: '',
   });
-  const [saved, setSaved] = useState(false);
-  const [passwordSaved, setPasswordSaved] = useState(false);
-
-  const handleProfileSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  const handlePasswordChange = () => {
-    setPasswordSaved(true);
-    setPasswords({ current: '', newPass: '', confirmPassword: '' });
-    setTimeout(() => setPasswordSaved(false), 2000);
-  };
+  const [saving, setSaving] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const inputClass =
     'w-full h-10 px-3 border border-stone-300 rounded-md text-sm outline-none focus:ring-1 focus:ring-stone-900 focus:border-stone-900';
+
+  const handleProfileSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const updated = await utilisateurService.updateProfile(user.id, {
+        nom: form.nom,
+        prenom: form.prenom,
+        telephone: form.telephone,
+      });
+      updateUser({ nom: updated.nom, prenom: updated.prenom, telephone: updated.telephone ?? undefined });
+      toast('success', 'Profil mis à jour.');
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : 'Erreur lors de la mise à jour du profil.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (!user) return;
+    if (passwords.newPass.length < 6) {
+      toast('error', 'Le mot de passe doit contenir au moins 6 caractères.');
+      return;
+    }
+    if (passwords.newPass !== passwords.confirmPassword) {
+      toast('error', 'Les mots de passe ne correspondent pas.');
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      await utilisateurService.updateProfile(user.id, { password: passwords.newPass });
+      setPasswords({ newPass: '', confirmPassword: '' });
+      toast('success', 'Mot de passe changé.');
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : 'Erreur lors du changement de mot de passe.');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -89,9 +119,9 @@ export default function ProfilPage() {
             <label className="block text-sm font-medium text-stone-800 mb-1.5">Email</label>
             <input
               type="email"
-              value={form.email}
-              onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-              className={inputClass}
+              value={user?.email || ''}
+              disabled
+              className={`${inputClass} bg-stone-50 text-stone-400 cursor-not-allowed`}
             />
           </div>
           <div>
@@ -106,12 +136,12 @@ export default function ProfilPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={handleProfileSave}
-              className="flex items-center gap-2 h-9 px-4 bg-stone-900 hover:bg-stone-800 text-white font-medium rounded-md text-sm transition-colors"
+              disabled={saving}
+              className="flex items-center gap-2 h-9 px-4 bg-stone-900 hover:bg-stone-800 text-white font-medium rounded-md text-sm transition-colors disabled:opacity-50"
             >
-              <Save className="h-4 w-4" />
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Enregistrer
             </button>
-            {saved && <span className="text-sm text-success-600 font-medium">Profil enregistré !</span>}
           </div>
         </div>
       </div>
@@ -122,15 +152,6 @@ export default function ProfilPage() {
           Changer le mot de passe
         </h2>
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-stone-800 mb-1.5">Mot de passe actuel</label>
-            <input
-              type="password"
-              value={passwords.current}
-              onChange={(e) => setPasswords((p) => ({ ...p, current: e.target.value }))}
-              className={inputClass}
-            />
-          </div>
           <div>
             <label className="block text-sm font-medium text-stone-800 mb-1.5">Nouveau mot de passe</label>
             <input
@@ -152,35 +173,11 @@ export default function ProfilPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={handlePasswordChange}
-              className="flex items-center gap-2 h-9 px-4 bg-stone-100 hover:bg-stone-200 text-stone-800 font-medium rounded-md text-sm transition-colors"
+              disabled={changingPassword || !passwords.newPass}
+              className="flex items-center gap-2 h-9 px-4 bg-stone-100 hover:bg-stone-200 text-stone-800 font-medium rounded-md text-sm transition-colors disabled:opacity-50"
             >
-              <Lock className="h-4 w-4" />
+              {changingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
               Changer le mot de passe
-            </button>
-            {passwordSaved && <span className="text-sm text-success-600 font-medium">Mot de passe changé !</span>}
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-stone-200 p-6">
-        <h2 className="text-base font-semibold text-stone-900 mb-4">Paramètres du compte</h2>
-        <div className="space-y-1">
-          <div className="flex items-center justify-between py-3 border-b border-stone-200">
-            <div>
-              <p className="text-sm font-medium text-stone-900">Notifications email</p>
-              <p className="text-xs text-stone-500">Recevoir des notifications par email</p>
-            </div>
-            <button className="relative inline-flex h-5 w-9 items-center rounded-full bg-success-600">
-              <span className="inline-block h-3.5 w-3.5 transform rounded-full bg-white translate-x-5" />
-            </button>
-          </div>
-          <div className="flex items-center justify-between py-3">
-            <div>
-              <p className="text-sm font-medium text-stone-900">Profil public</p>
-              <p className="text-xs text-stone-500">Rendre votre profil visible publiquement</p>
-            </div>
-            <button className="relative inline-flex h-5 w-9 items-center rounded-full bg-success-600">
-              <span className="inline-block h-3.5 w-3.5 transform rounded-full bg-white translate-x-5" />
             </button>
           </div>
         </div>
@@ -192,17 +189,17 @@ export default function ProfilPage() {
           Zone de danger
         </h2>
         <p className="text-sm text-error-700 mb-4">
-          La suppression de votre compte est irréversible. Toutes vos données seront définitivement effacées.
+          La déconnexion mettra fin à votre session actuelle.
         </p>
         <button
           onClick={() => {
-            if (confirm('Êtes-vous sûr de vouloir supprimer votre compte ?')) {
+            if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
               logout();
             }
           }}
           className="h-9 px-4 bg-error-600 hover:bg-error-700 text-white font-medium rounded-md text-sm transition-colors"
         >
-          Supprimer mon compte
+          Se déconnecter
         </button>
       </div>
     </div>

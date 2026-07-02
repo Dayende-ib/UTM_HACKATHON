@@ -36,8 +36,9 @@ Le schéma est versionné dans `backend/supabase/migrations/` (ordre = dépendan
 - `008_seed_demo_auth_users.sql` — comptes de connexion réels (`auth.users` + `auth.identities`), un par rôle
 - `009_enrich_utilisateurs.sql` — un artisan par ville (au lieu de 3 artisans de Ouaga possédant des commerces partout), 5 citoyens supplémentaires, avis sur les commerces multi-villes
 - `010_merge_duplicate_categories.sql` — fusionne 7 catégories dupliquées (ex. `coiffeur`/`coiffure`) issues d'un second jeu de données mal encodé déjà présent en base ; corrige le texte corrompu des catégories restantes sans équivalent
+- `011_commerce_events.sql` — table `commerce_events` (horodatage vue/appel/whatsapp) pour le graphique d'évolution des statistiques artisan
 
-> Migrations idempotentes : rejouables sans erreur (colonnes réconciliées via `ADD COLUMN IF NOT EXISTS`, policies via `DROP POLICY IF EXISTS`, seeds guardés). Appliquer dans l'ordre `000 → 010`.
+> Migrations idempotentes : rejouables sans erreur (colonnes réconciliées via `ADD COLUMN IF NOT EXISTS`, policies via `DROP POLICY IF EXISTS`, seeds guardés). Appliquer dans l'ordre `000 → 011`.
 
 ### Comptes de démo (après migration `008`)
 
@@ -107,13 +108,17 @@ Routes IA (Groq — Llama 3.1 + Whisper) :
 
 Routes métier :
 - `GET|POST /api/commerces`, `GET|PUT|DELETE /api/commerces/[id]`
-- `POST /api/commerces/[id]/stats` — incrémente un compteur (`{ type: 'vue'|'appel'|'whatsapp' }`)
+- `POST /api/commerces/[id]/stats` — incrémente un compteur (`{ type: 'vue'|'appel'|'whatsapp' }`) et horodate l'évènement
+- `GET /api/commerces/[id]/stats/evolution?days=7` — évolution vues/appels/whatsapp par jour
 - `GET /api/categories`
-- `GET|POST /api/avis`, `DELETE /api/avis/[id]`
+- `GET|POST /api/avis` (filtre par `commerce_id` et/ou `user_id`), `DELETE /api/avis/[id]`
+- `PUT /api/utilisateurs/[id]` — mise à jour de son propre profil (nom/prénom/téléphone/mot de passe)
 - `POST /api/auth/connexion`, `POST /api/auth/inscription`
 - `GET /api/recherche` (recherche + tri géolocalisé par distance)
 - `GET|POST /api/geocoding` (géocodage direct / inverse via Nominatim)
 - `POST /api/upload` (image → Supabase Storage, renvoie l'URL publique)
+
+Routes admin (`requireAdmin`, réservées au rôle `admin`) : `/api/admin/{stats,users,commerces,avis,categories,signalements}` — voir `backend/src/app/api/admin/`.
 
 Documentation :
 - Swagger statique : `backend/public/swagger.html`
