@@ -2,7 +2,21 @@ import type { NextConfig } from "next";
 import path from "path";
 
 function resolveBackendUrl(): string | null {
-  const backend = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+  const configured = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  // On Vercel (VERCEL is always set), silently falling back to localhost would
+  // make every proxied /api/* route fail at runtime with no visible error
+  // (commerceService.getAll().catch(console.error) swallows it). Fail the
+  // build loudly instead so misconfiguration is caught before deploy.
+  if (!configured && process.env.VERCEL) {
+    throw new Error(
+      'BACKEND_URL (or NEXT_PUBLIC_BACKEND_URL) is not set on Vercel. ' +
+      'Set it to the deployed backend URL in the frontend project env vars, ' +
+      'or every /api/* rewrite will silently fail at runtime.'
+    );
+  }
+
+  const backend = configured || 'http://localhost:3001';
 
   try {
     const backendUrl = new URL(backend);
@@ -35,13 +49,16 @@ const nextConfig: NextConfig = {
       return [];
     }
 
+    // Each `:path*` rule already matches its own base path with zero segments
+    // (e.g. `/api/commerces/:path*` matches plain `/api/commerces`), so a
+    // separate exact-match rule for the same base is redundant — and on
+    // Vercel, having both creates a routing ambiguity that resolves as a
+    // 308 redirect to the exact same URL (infinite loop for the caller).
     return [
       { source: '/api/ai/:path*',        destination: `${backend}/api/ai/:path*` },
       { source: '/api/commerces/:path*', destination: `${backend}/api/commerces/:path*` },
-      { source: '/api/commerces',        destination: `${backend}/api/commerces` },
       { source: '/api/categories',       destination: `${backend}/api/categories` },
       { source: '/api/avis/:path*',      destination: `${backend}/api/avis/:path*` },
-      { source: '/api/avis',             destination: `${backend}/api/avis` },
       { source: '/api/auth/:path*',      destination: `${backend}/api/auth/:path*` },
       { source: '/api/recherche',        destination: `${backend}/api/recherche` },
       { source: '/api/geocoding',        destination: `${backend}/api/geocoding` },

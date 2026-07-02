@@ -13,7 +13,9 @@ ArtisanBF connecte les artisans à leurs clients via un annuaire géolocalisé, 
 ## Architecture (monorepo)
 
 - **frontend/** : application Next.js 16 / React 19 (pages publiques + dashboard), port 3000. Nom de package : `frontend`.
-- **backend/** : API Next.js 14 / React 18 (routes `/api/*`, documentation Swagger, intégrations IA), port 3001. Nom de package : `artisanbf`.
+- **backend/** : API (routes `/api/*`, documentation Swagger, intégrations IA), port 3001. Nom de package : `artisanbf`.
+
+Les deux apps tournent sur **Next.js 16 / React 19** au runtime (hoisté à la racine du monorepo), même si `backend/package.json` déclare encore Next 14 / React 18. Conséquence directe : dans les routes `[id]` du backend, `params` est une **Promise** (`const { id } = await params`, jamais `params.id` en synchrone).
 
 > ⚠️ Le backend est à la racine `backend/` (le nom **de package** est `artisanbf`). Il n'existe **pas** de dossier `backend/artisanbf/`.
 
