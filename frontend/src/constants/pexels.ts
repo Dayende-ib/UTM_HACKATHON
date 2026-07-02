@@ -15,4 +15,9 @@ export const CATEGORY_PEXELS_QUERY: Record<string, string> = {
   'reparateur-telephones': 'phone repair technician',
   'frigoriste': 'air conditioner technician repair',
   'peintre': 'house painter painting wall',
+  'jardinage': 'gardener landscaping garden work',
+  'maconnerie': 'mason bricklayer construction site',
+  'peinture': 'house painter painting wall',
+  'photographie': 'photographer camera studio africa',
+  'restauration': 'african street food restaurant',
 };

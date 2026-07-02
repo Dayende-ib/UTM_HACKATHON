@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Wrench,
   Scissors,
@@ -11,11 +11,14 @@ import {
   Smartphone,
   Snowflake,
   PaintBucket,
+  Leaf,
+  Construction,
+  Camera,
+  UtensilsCrossed,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { CATEGORIES } from "@/constants";
-import { useSearchStore } from "@/stores/search.store";
+import { categorieService } from "@/services/categorie.service";
 import type { Categorie } from "@/types";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -28,15 +31,28 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Smartphone,
   Snowflake,
   PaintBucket,
+  Leaf,
+  Construction,
+  Camera,
+  UtensilsCrossed,
 };
 
 function getCategoryIcon(iconName: string) {
   return ICON_MAP[iconName] ?? Wrench;
 }
 
-export function CategoryFilter() {
-  const { categorieId, setCategorie } = useSearchStore();
+interface CategoryFilterProps {
+  value: string | null;
+  onChange: (categorieId: string | null) => void;
+}
+
+export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [categories, setCategories] = useState<Categorie[]>([]);
+
+  useEffect(() => {
+    categorieService.getAll().then(setCategories).catch(() => setCategories([]));
+  }, []);
 
   const scroll = (direction: "left" | "right") => {
     if (!scrollRef.current) return;
@@ -48,7 +64,7 @@ export function CategoryFilter() {
   };
 
   const handleSelect = (cat: Categorie) => {
-    setCategorie(categorieId === cat.id ? null : cat.id);
+    onChange(value === cat.id ? null : cat.id);
   };
 
   return (
@@ -63,10 +79,10 @@ export function CategoryFilter() {
 
       <div ref={scrollRef} className="no-scrollbar flex gap-2 overflow-x-auto px-8 py-1">
         <button
-          onClick={() => setCategorie(null)}
+          onClick={() => onChange(null)}
           className={[
             "flex shrink-0 items-center gap-2 rounded-md border px-3.5 py-2 text-sm font-medium transition-colors",
-            categorieId === null
+            value === null
               ? "border-stone-900 bg-stone-900 text-white"
               : "border-stone-300 bg-white text-stone-700 hover:border-stone-900",
           ].join(" ")}
@@ -74,9 +90,9 @@ export function CategoryFilter() {
           Tous
         </button>
 
-        {CATEGORIES.map((cat) => {
+        {categories.map((cat) => {
           const Icon = getCategoryIcon(cat.icone);
-          const isActive = categorieId === cat.id;
+          const isActive = value === cat.id;
 
           return (
             <button

@@ -8,6 +8,7 @@ import { ROUTES } from '@/constants/routes';
 import { commerceService } from '@/services/commerce.service';
 import { categorieService } from '@/services/categorie.service';
 import { CommercePhoto } from '@/components/commerces/commerce-photo';
+import { CategoryFilter } from '@/components/commerces/category-filter';
 import MapLeaflet from '@/components/maps/map-leaflet';
 import { filterCommerces } from '@/utils/filter-commerces';
 import { resolveCategoryId } from '@/utils/voice-search';
@@ -195,6 +196,13 @@ export default function AnnuairePage() {
             {error && <p className="mt-2 text-sm text-error-600">{error}</p>}
             {isRecording && <p className="mt-2 text-sm text-stone-500">Parlez maintenant: métier, quartier ou urgence.</p>}
           </div>
+        </div>
+
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-5">
+          <CategoryFilter
+            value={selectedCategory}
+            onChange={(id) => { setSelectedCategory(id); setCurrentPage(1); }}
+          />
         </div>
       </div>
 

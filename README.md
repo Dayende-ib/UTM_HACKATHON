@@ -33,8 +33,19 @@ Le schéma est versionné dans `backend/supabase/migrations/` (ordre = dépendan
 - `005_seed_data.sql` — catégories + commerces à Ouagadougou
 - `006_admin_module.sql` — modération : `utilisateurs.est_actif`, `avis.approuve`, table `signalements`
 - `007_seed_users_cities_avis.sql` — utilisateurs de démo, commerces multi-villes (Bobo, Koudougou, Banfora, Ouahigouya, Fada) associés à des artisans, et avis
+- `008_seed_demo_auth_users.sql` — comptes de connexion réels (`auth.users` + `auth.identities`), un par rôle
+- `009_enrich_utilisateurs.sql` — un artisan par ville (au lieu de 3 artisans de Ouaga possédant des commerces partout), 5 citoyens supplémentaires, avis sur les commerces multi-villes
+- `010_merge_duplicate_categories.sql` — fusionne 7 catégories dupliquées (ex. `coiffeur`/`coiffure`) issues d'un second jeu de données mal encodé déjà présent en base ; corrige le texte corrompu des catégories restantes sans équivalent
 
-> Migrations idempotentes : rejouables sans erreur (colonnes réconciliées via `ADD COLUMN IF NOT EXISTS`, policies via `DROP POLICY IF EXISTS`, seeds guardés). Appliquer dans l'ordre `000 → 007`.
+> Migrations idempotentes : rejouables sans erreur (colonnes réconciliées via `ADD COLUMN IF NOT EXISTS`, policies via `DROP POLICY IF EXISTS`, seeds guardés). Appliquer dans l'ordre `000 → 010`.
+
+### Comptes de démo (après migration `008`)
+
+| Email | Mot de passe | Rôle |
+|---|---|---|
+| `admin@test.com` | `Demo1234!` | admin |
+| `artisan@test.com` | `Demo1234!` | artisan (propriétaire de « Garage Wend-Kuni ») |
+| `citoyen@test.com` | `Demo1234!` | citoyen |
 >
 > ⚠️ `007` relâche la FK `utilisateurs.id → auth.users` pour permettre des **profils de démo sans compte auth** (données/associations uniquement, pas de login). Les inscriptions réelles restent inchangées.
 

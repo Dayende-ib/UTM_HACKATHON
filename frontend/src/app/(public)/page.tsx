@@ -14,17 +14,22 @@ import { CommercePhoto } from '@/components/commerces/commerce-photo';
 import type { Commerce, Categorie } from '@/types/commerce';
 import { resolveCategoryId } from '@/utils/voice-search';
 
+// Indexé par slug (stable, présent en base) plutôt que par id.
 const categoryIcons: Record<string, string> = {
-  'cat-1': '🔧',
-  'cat-2': '✂️',
-  'cat-3': '🪚',
-  'cat-4': '🔥',
-  'cat-5': '⚡',
-  'cat-6': '🚿',
-  'cat-7': '💇',
-  'cat-8': '📱',
-  'cat-9': '❄️',
-  'cat-10': '🎨',
+  'mecanicien': '🔧',
+  'couturier': '✂️',
+  'menuisier': '🪚',
+  'soudeur': '🔥',
+  'electricien': '⚡',
+  'plombier': '🚿',
+  'coiffeur': '💇',
+  'reparateur-telephones': '📱',
+  'frigoriste': '❄️',
+  'jardinage': '🌿',
+  'maconnerie': '🧱',
+  'peinture': '🎨',
+  'photographie': '📷',
+  'restauration': '🍽️',
 };
 
 const popularSearches = ['Mécanicien', 'Couturier', 'Électricien', 'Plombier', 'Coiffeur'];
@@ -275,7 +280,7 @@ export default function HomePage() {
                 href={`${ROUTES.ANNUAIRE}?categorie=${cat.id}`}
                 className="group rounded-lg border border-stone-200 p-4 hover:border-stone-900 transition-colors"
               >
-                <span className="text-2xl block mb-3">{categoryIcons[cat.id] || '🔧'}</span>
+                <span className="text-2xl block mb-3">{categoryIcons[cat.slug] || '🔧'}</span>
                 <h3 className="font-medium text-stone-900 text-sm flex items-center justify-between">
                   {cat.nom}
                   <ArrowRight className="h-3.5 w-3.5 text-stone-300 -translate-x-1 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
