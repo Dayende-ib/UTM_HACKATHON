@@ -10,18 +10,27 @@ export async function POST(request: Request) {
       return Response.json({ error: 'email et password requis' }, { status: 400 })
     }
 
-    const supabase = createServiceClient()
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const authClient = createServiceClient()
+    const { data, error } = await authClient.auth.signInWithPassword({ email, password })
 
     if (error) {
       return Response.json({ error: 'Email ou mot de passe incorrect' }, { status: 401 })
     }
 
-    const { data: profil } = await supabase
+    // Client séparé et non authentifié : signInWithPassword() sur authClient a
+    // substitué son contexte d'autorisation (JWT de l'utilisateur connecté) à
+    // la clé service_role. Réutiliser authClient ici ferait échouer cette
+    // lecture silencieusement (droits insuffisants sur la table).
+    const dataClient = createServiceClient()
+    const { data: profil, error: profilError } = await dataClient
       .from('utilisateurs')
       .select('*')
       .eq('id', data.user.id)
       .single()
+
+    if (profilError) {
+      console.error('[/api/auth/connexion] lecture profil échouée:', profilError)
+    }
 
     return Response.json({
       user: {

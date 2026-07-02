@@ -10,9 +10,9 @@ export async function POST(request: Request) {
       return Response.json({ error: 'email, password et nom requis' }, { status: 400 })
     }
 
-    const supabase = createServiceClient()
+    const authClient = createServiceClient()
 
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await authClient.auth.signUp({
       email,
       password,
       options: { data: { nom, prenom, telephone, role } },
@@ -23,13 +23,20 @@ export async function POST(request: Request) {
     }
 
     if (authData.user) {
-      await supabase.from('utilisateurs').insert({
+      // Client séparé : signUp() sur authClient a substitué son contexte
+      // d'autorisation à la clé service_role, ce qui ferait échouer cet
+      // insert silencieusement (aucune policy RLS INSERT sur utilisateurs).
+      const dataClient = createServiceClient()
+      const { error: insertError } = await dataClient.from('utilisateurs').insert({
         id: authData.user.id,
         nom,
         prenom: prenom || '',
         telephone: telephone || null,
         role,
       })
+      if (insertError) {
+        console.error('[/api/auth/inscription] création profil échouée:', insertError)
+      }
     }
 
     return Response.json({
