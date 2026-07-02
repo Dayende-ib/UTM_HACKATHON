@@ -500,6 +500,31 @@
 }
 
 /* ============================================================
+   MOBILE
+   ============================================================ */
+
+/* Safari iOS zoome automatiquement la page au focus d'un champ dont le
+   font-size est < 16px. Le design system utilise du 14px (text-sm) partout ;
+   on relève ce seuil uniquement sur mobile pour éviter le zoom intempestif
+   sans changer l'apparence desktop. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Respecte l'encoche/la zone sûre des téléphones (notch, barre de gestes)
+   pour les éléments collés aux bords de l'écran. */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ============================================================
     LEAFLET MAP UI
     ============================================================ */
 .leaflet-container {

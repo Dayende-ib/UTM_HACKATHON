@@ -53,16 +53,17 @@ function Modal({ open, onClose, title, size = "md", children }: ModalProps) {
         aria-label={title}
         className={[
           "relative z-10 w-full mx-4 rounded-lg bg-white border border-stone-200",
+          "flex flex-col max-h-[85vh]",
           "animate-in zoom-in fade-in duration-200",
           sizeStyles[size],
         ].join(" ")}
       >
         {title && (
-          <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4 shrink-0">
             <h2 className="text-base font-semibold text-stone-900">{title}</h2>
             <button
               onClick={onClose}
-              className="rounded-md p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+              className="rounded-md p-2 -m-1 text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
               aria-label="Fermer"
             >
               <X className="h-4 w-4" />
@@ -72,13 +73,13 @@ function Modal({ open, onClose, title, size = "md", children }: ModalProps) {
         {!title && (
           <button
             onClick={onClose}
-            className="absolute right-3 top-3 rounded-md p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+            className="absolute right-3 top-3 rounded-md p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
             aria-label="Fermer"
           >
             <X className="h-4 w-4" />
           </button>
         )}
-        <div className="px-5 py-5">{children}</div>
+        <div className="px-5 py-5 overflow-y-auto">{children}</div>
       </div>
     </div>
   );

@@ -297,21 +297,22 @@ export default function CommercesPage() {
       )}
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-stone-900/50" onClick={() => setShowModal(false)} />
-          <div className="relative z-10 w-full max-w-lg mx-4 bg-white rounded-lg border border-stone-200">
-            <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4">
+          <div className="relative z-10 w-full max-w-lg max-h-full bg-white rounded-lg border border-stone-200 flex flex-col">
+            <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4 shrink-0">
               <h2 className="text-base font-semibold text-stone-900">
                 {editingCommerce ? 'Modifier le commerce' : 'Nouveau commerce'}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-md"
+                className="p-2 -m-1 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-md"
+                aria-label="Fermer"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="px-5 py-4 space-y-4">
+            <div className="px-5 py-4 space-y-4 overflow-y-auto">
               <div>
                 <label className="block text-sm font-medium text-stone-800 mb-1.5">Nom</label>
                 <input
@@ -447,7 +448,7 @@ export default function CommercesPage() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center justify-end gap-2.5 border-t border-stone-200 px-5 py-4">
+            <div className="flex items-center justify-end gap-2.5 border-t border-stone-200 px-5 py-4 shrink-0">
               <button
                 onClick={() => setShowModal(false)}
                 className="h-9 px-4 text-sm font-medium text-stone-700 hover:bg-stone-100 rounded-md transition-colors"
