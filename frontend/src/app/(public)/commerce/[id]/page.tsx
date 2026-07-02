@@ -252,6 +252,22 @@ export default function CommerceDetailPage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="min-h-screen pb-24 lg:pb-8">
+      {/* Barre contact sticky mobile */}
+      <div className="fixed bottom-16 left-0 right-0 z-40 lg:hidden bg-white border-t border-stone-200 px-4 py-3 flex gap-3">
+        {commerce.telephone && (
+          <a href={`tel:${commerce.telephone}`} onClick={() => commerceService.incrementCall(id)}
+            className="flex-1 flex items-center justify-center gap-2 h-11 bg-info-600 text-white font-medium rounded-md text-sm">
+            <Phone className="h-4 w-4" /> Appeler
+          </a>
+        )}
+        {commerce.whatsapp && (
+          <a href={`https://wa.me/${commerce.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer"
+            onClick={() => commerceService.incrementWhatsAppClick(id)}
+            className="flex-1 flex items-center justify-center gap-2 h-11 bg-success-600 text-white font-medium rounded-md text-sm">
+            <MessageCircle className="h-4 w-4" /> WhatsApp
+          </a>
+        )}
+      </div>
       <div className="border-b border-stone-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <Link

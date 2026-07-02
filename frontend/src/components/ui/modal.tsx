@@ -41,7 +41,7 @@ function Modal({ open, onClose, title, size = "md", children }: ModalProps) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div
         className="absolute inset-0 bg-stone-900/50 animate-in fade-in duration-150"
         onClick={onClose}
@@ -52,10 +52,11 @@ function Modal({ open, onClose, title, size = "md", children }: ModalProps) {
         aria-modal="true"
         aria-label={title}
         className={[
-          "relative z-10 w-full mx-4 rounded-lg bg-white border border-stone-200",
-          "flex flex-col max-h-[85vh]",
-          "animate-in zoom-in fade-in duration-200",
-          sizeStyles[size],
+          "relative z-10 w-full bg-white border-t sm:border border-stone-200",
+          "flex flex-col max-h-[92vh] sm:max-h-[85vh]",
+          "rounded-t-xl sm:rounded-lg mx-0 sm:mx-4",
+          "animate-in slide-in-from-bottom sm:zoom-in sm:fade-in duration-200",
+          `sm:${sizeStyles[size]}`,
         ].join(" ")}
       >
         {title && (

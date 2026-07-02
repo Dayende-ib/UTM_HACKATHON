@@ -7,6 +7,7 @@ import { Menu, X } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { ROUTES } from '@/constants/routes';
 import Sidebar from '@/components/layout/sidebar';
+import MobileNav from '@/components/layout/mobile-nav';
 
 export default function DashboardLayout({
   children,
@@ -78,10 +79,11 @@ export default function DashboardLayout({
           <Sidebar role={user.role === 'artisan' ? 'artisan' : 'citoyen'} user={user} onLogout={handleLogout} />
         </div>
 
-        <main className="flex-1 min-h-[calc(100vh-4rem)] p-6 lg:p-8 bg-stone-50">
+        <main className="flex-1 min-h-[calc(100vh-4rem)] p-6 lg:p-8 bg-stone-50 pb-24 lg:pb-8">
           {children}
         </main>
       </div>
+      <MobileNav />
     </div>
   );
 }
