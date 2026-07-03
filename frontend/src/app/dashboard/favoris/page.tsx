@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Heart, Star, MapPin, Trash2, Loader2 } from 'lucide-react';
+import { Heart, Star, MapPin, Trash2, Loader2, WifiOff } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 import { CommercePhoto } from '@/components/commerces/commerce-photo';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useOffline } from '@/hooks/useOffline';
 import { commerceService } from '@/services/commerce.service';
 import type { Commerce } from '@/types/commerce';
 
@@ -13,15 +14,20 @@ export default function DashboardFavorisPage() {
   const { favoris, toggleFavori } = useFavorites();
   const [commerces, setCommerces] = useState<Commerce[]>([]);
   const [loading, setLoading] = useState(true);
+  const isOffline = useOffline();
 
   useEffect(() => {
     let annule = false;
     // Reset du chargement quand la liste de favoris change : volontaire.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
-    Promise.all(favoris.map((id) => commerceService.getById(id)))
-      .then((list) => {
-        if (!annule) setCommerces(list.filter((c): c is Commerce => Boolean(c)));
+    Promise.allSettled(favoris.map((id) => commerceService.getById(id)))
+      .then((results) => {
+        if (annule) return;
+        const list = results
+          .map((r) => (r.status === 'fulfilled' ? r.value : undefined))
+          .filter((c): c is Commerce => Boolean(c));
+        setCommerces(list);
       })
       .finally(() => !annule && setLoading(false));
     return () => {
@@ -36,6 +42,12 @@ export default function DashboardFavorisPage() {
         <p className="text-stone-500 text-sm mt-1.5 flex items-center gap-1.5">
           {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
           {commerces.length} artisan{commerces.length !== 1 ? 's' : ''} favori{commerces.length !== 1 ? 's' : ''}
+          {isOffline && !loading && (
+            <span className="inline-flex items-center gap-1 text-primary-600">
+              <WifiOff className="h-3 w-3" />
+              données en cache — hors ligne
+            </span>
+          )}
         </p>
       </div>
 

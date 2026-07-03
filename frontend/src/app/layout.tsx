@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/toast";
 import PwaRegister from "@/components/pwa-register";
+import OfflineSync from "@/components/offline-sync";
 
 export const metadata: Metadata = {
   title: "ArtisansBF - Le bon artisan près de chez vous",
@@ -40,6 +41,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-bg-primary text-text-primary font-sans antialiased scroll-smooth">
         <ToastProvider>{children}</ToastProvider>
         <PwaRegister />
+        <OfflineSync />
       </body>
     </html>
   );

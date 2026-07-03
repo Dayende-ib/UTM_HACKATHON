@@ -3,7 +3,7 @@
 import { useState, use, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Star, MapPin, Phone, MessageCircle, Heart, ArrowLeft, Send, Share2, Loader2, Sparkles, Mic, Square } from 'lucide-react';
+import { Star, MapPin, Phone, MessageCircle, Heart, ArrowLeft, Send, Share2, Loader2, Sparkles, Mic, Square, WifiOff } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 import { usePexelsPhotos } from '@/hooks/usePexelsPhotos';
 import { CATEGORY_PEXELS_QUERY } from '@/constants/pexels';
@@ -16,6 +16,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useSpeechToText } from '@/hooks/useSpeechToText';
 import { useToast } from '@/components/ui/toast';
+import { useOffline } from '@/hooks/useOffline';
 import type { Commerce } from '@/types/commerce';
 import type { Commentaire } from '@/types/commentaire';
 
@@ -72,6 +73,7 @@ export default function CommerceDetailPage({ params }: { params: Promise<{ id: s
   const user = useAuthStore((s) => s.user);
   const { toggleFavori, isFavori } = useFavorites();
   const { toast: notify } = useToast();
+  const isOffline = useOffline();
 
   const [commerce, setCommerce] = useState<Commerce | null>(null);
   const [reviews, setReviews] = useState<Commentaire[]>([]);
@@ -210,7 +212,12 @@ export default function CommerceDetailPage({ params }: { params: Promise<{ id: s
         setReviews((prev) => [created, ...prev]);
         setReviewText('');
         setReviewRating(0);
-        notify('success', 'Merci ! Votre avis a été publié.');
+        notify(
+          created._pending ? 'warning' : 'success',
+          created._pending
+            ? 'Vous êtes hors ligne : votre avis sera publié dès la reconnexion.'
+            : 'Merci ! Votre avis a été publié.'
+        );
       } catch (err) {
         notify('error', err instanceof Error ? err.message : 'Erreur lors de la publication.');
       } finally {
@@ -290,6 +297,12 @@ export default function CommerceDetailPage({ params }: { params: Promise<{ id: s
                   <h1 className="text-2xl sm:text-3xl font-semibold text-stone-900 mt-1.5 tracking-tight">
                     {commerce.nom}
                   </h1>
+                  {isOffline && (
+                    <p className="inline-flex items-center gap-1 text-xs text-primary-600 mt-1.5">
+                      <WifiOff className="h-3 w-3" />
+                      Données en cache — hors ligne
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
@@ -503,6 +516,14 @@ export default function CommerceDetailPage({ params }: { params: Promise<{ id: s
                             </div>
                           </div>
                           <div className="ml-auto flex items-center gap-2">
+                            {review._pending && (
+                              <span
+                                className="text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary-50 text-primary-700"
+                                title="Sera envoyé dès la reconnexion"
+                              >
+                                En attente
+                              </span>
+                            )}
                             {review.iaScore !== undefined && (
                               <span
                                 className="text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded bg-info-50 text-info-700"

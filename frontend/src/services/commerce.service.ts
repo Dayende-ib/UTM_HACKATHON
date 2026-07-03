@@ -1,5 +1,6 @@
 import type { Commerce, CreateCommerceData } from '@/types/commerce';
-import { apiFetch } from '@/lib/api-client';
+import { apiFetch, ApiError } from '@/lib/api-client';
+import { db } from '@/lib/db';
 
 const API = '/api/commerces';
 
@@ -64,22 +65,40 @@ export interface CommerceFilters {
 
 export const commerceService = {
   async getAll(filters?: CommerceFilters): Promise<Commerce[]> {
-    const data = await apiFetch<{ commerces?: Record<string, unknown>[] }>(API, {
-      query: {
-        categorie: filters?.categorieId,
-        search: filters?.search,
-        artisanId: filters?.artisanId,
-      },
-    });
-    return (data.commerces || []).map(mapCommerce);
+    try {
+      const data = await apiFetch<{ commerces?: Record<string, unknown>[] }>(API, {
+        query: {
+          categorie: filters?.categorieId,
+          search: filters?.search,
+          artisanId: filters?.artisanId,
+        },
+      });
+      const commerces = (data.commerces || []).map(mapCommerce);
+      if (commerces.length > 0) void db.commerces.bulkPut(commerces).catch(() => {});
+      return commerces;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      // Panne réseau : on retombe sur le cache local (filtré côté client).
+      let cached = await db.commerces.toArray();
+      if (filters?.categorieId) cached = cached.filter((c) => c.categorieId === filters.categorieId);
+      if (filters?.artisanId) cached = cached.filter((c) => c.artisanId === filters.artisanId);
+      if (filters?.search) {
+        const q = filters.search.toLowerCase();
+        cached = cached.filter((c) => c.nom.toLowerCase().includes(q) || c.description.toLowerCase().includes(q));
+      }
+      return cached;
+    }
   },
 
   async getById(id: string): Promise<Commerce | undefined> {
     try {
       const data = await apiFetch<Record<string, unknown>>(`${API}/${id}`);
-      return mapCommerce(data);
-    } catch {
-      return undefined;
+      const commerce = mapCommerce(data);
+      void db.commerces.put(commerce).catch(() => {});
+      return commerce;
+    } catch (error) {
+      if (error instanceof ApiError) return undefined;
+      return db.commerces.get(id);
     }
   },
 

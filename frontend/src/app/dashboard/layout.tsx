@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { ROUTES } from '@/constants/routes';
 import Sidebar from '@/components/layout/sidebar';
 import DashboardMobileNav from '@/components/layout/dashboard-mobile-nav';
+import OfflineBanner from '@/components/layout/offline-banner';
 
 export default function DashboardLayout({
   children,
@@ -58,6 +59,7 @@ export default function DashboardLayout({
           <span className="hidden sm:inline text-sm font-medium text-stone-700">{user.prenom}</span>
         </div>
       </header>
+      <OfflineBanner />
 
       <div className="flex">
         {sidebarOpen && (

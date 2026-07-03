@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { ROUTES } from '@/constants/routes';
 import Sidebar from '@/components/layout/sidebar';
 import AdminMobileNav from '@/components/layout/admin-mobile-nav';
+import OfflineBanner from '@/components/layout/offline-banner';
 
 export default function AdminLayout({
   children,
@@ -61,6 +62,7 @@ export default function AdminLayout({
           <span className="hidden sm:inline text-sm font-medium text-stone-700">{user.prenom}</span>
         </div>
       </header>
+      <OfflineBanner />
 
       <div className="flex">
         {sidebarOpen && (

@@ -12,4 +12,6 @@ export interface Commentaire {
   estSpam: boolean;
   estModer: boolean;
   dateCreation: string;
+  /** Créé hors ligne, en attente d'envoi réel dès la reconnexion. */
+  _pending?: boolean;
 }

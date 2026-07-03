@@ -40,10 +40,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Navigation (chargement de page) : réseau d'abord, page hors-ligne en secours.
+  // Navigation (chargement de page) : réseau d'abord, mis en cache au passage
+  // pour permettre de rouvrir une page déjà visitée hors ligne ; sinon page
+  // hors-ligne en secours.
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match(OFFLINE_URL).then((res) => res || caches.match('/')))
+      fetch(request)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(CACHE_VERSION).then((cache) => cache.put(request, clone));
+          return response;
+        })
+        .catch(() =>
+          caches
+            .match(request)
+            .then((cached) => cached || caches.match(OFFLINE_URL).then((res) => res || caches.match('/')))
+        )
     );
     return;
   }

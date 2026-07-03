@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, MapPin, Star, Phone, ChevronLeft, ChevronRight, Map as MapIcon, List, Mic, Loader2, Square, SlidersHorizontal, X } from 'lucide-react';
+import { Search, MapPin, Star, Phone, ChevronLeft, ChevronRight, Map as MapIcon, List, Mic, Loader2, Square, SlidersHorizontal, X, WifiOff } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 import { commerceService } from '@/services/commerce.service';
 import { categorieService } from '@/services/categorie.service';
@@ -14,6 +14,7 @@ import { filterCommerces } from '@/utils/filter-commerces';
 import { resolveCategoryId } from '@/utils/voice-search';
 import { useVoiceSearch } from '@/hooks/useVoiceSearch';
 import { useToast } from '@/components/ui/toast';
+import { useOffline } from '@/hooks/useOffline';
 import type { Commerce, Categorie } from '@/types/commerce';
 
 const cities = ['Toutes', 'Ouagadougou', 'Bobo-Dioulasso', 'Koudougou', 'Banfora', 'Ouahigouya'];
@@ -72,6 +73,7 @@ export default function AnnuairePage() {
   const [categories, setCategories] = useState<Categorie[]>([]);
   const { toast } = useToast();
   const { isRecording, isProcessing, error, result, startRecording, stopRecording, reset } = useVoiceSearch();
+  const isOffline = useOffline();
 
   useEffect(() => {
     commerceService.getAll().then(setCommerces).catch(console.error);
@@ -274,8 +276,14 @@ export default function AnnuairePage() {
           {/* Results */}
           <div>
             <div className="flex items-center justify-between mb-5">
-              <p className="text-sm text-stone-500">
+              <p className="text-sm text-stone-500 flex items-center gap-1.5">
                 <span className="font-medium text-stone-900">{filtered.length}</span> résultat{filtered.length !== 1 ? 's' : ''}
+                {isOffline && (
+                  <span className="inline-flex items-center gap-1 text-primary-600">
+                    <WifiOff className="h-3 w-3" />
+                    données en cache — hors ligne
+                  </span>
+                )}
               </p>
               <div className="flex items-center gap-1 border border-stone-300 rounded-md p-0.5">
                 <button onClick={() => setShowMap(false)} className={`p-1.5 rounded-sm transition-colors ${!showMap ? 'bg-stone-900 text-white' : 'text-stone-500'}`} aria-label="Liste">
