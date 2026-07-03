@@ -19,6 +19,7 @@ function CitoyenDashboard() {
   const quickActions = [
     { href: ROUTES.DASHBOARD_ANNUAIRE, icon: Search, label: "Chercher un artisan" },
     { href: ROUTES.DASHBOARD_FAVORIS, icon: Heart, label: 'Mes favoris' },
+    { href: ROUTES.DASHBOARD_COMMERCES, icon: Store, label: 'Devenir artisan' },
     { href: ROUTES.DASHBOARD_PROFIL, icon: Star, label: 'Modifier mon profil' },
   ];
 
