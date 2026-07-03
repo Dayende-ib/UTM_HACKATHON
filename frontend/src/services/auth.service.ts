@@ -21,26 +21,28 @@ function toUser(raw: Record<string, unknown>): User {
 export const authService = {
   async login(email: string, password: string) {
     // signInWithPassword via le client Supabase : pose automatiquement les
-    // cookies sb-*-auth-token lisibles par le middleware SSR.
-    const { data: sbData, error: sbError } = await supabase.auth.signInWithPassword({ email, password });
+    // cookies sb-*-auth-token lisibles par le middleware SSR, et le SDK
+    // garde ensuite le token à jour (rafraîchi en arrière-plan), lu à la
+    // demande par api-client.ts via supabase.auth.getSession().
+    const { error: sbError } = await supabase.auth.signInWithPassword({ email, password });
     if (sbError) throw new Error(sbError.message);
 
     // Récupère le profil enrichi (nom/prenom/role) depuis notre backend
-    const data = await apiFetch<{ user: Record<string, unknown>; token?: string }>(
+    const data = await apiFetch<{ user: Record<string, unknown> }>(
       `${API}/connexion`,
       { method: 'POST', body: { email, password } }
     );
-    return { user: toUser(data.user), token: sbData.session?.access_token || '' };
+    return { user: toUser(data.user) };
   },
 
   async register(data: { email: string; password: string; nom: string; prenom: string; telephone?: string; role?: string }) {
-    const json = await apiFetch<{ user: Record<string, unknown>; token?: string }>(
+    const json = await apiFetch<{ user: Record<string, unknown> }>(
       `${API}/inscription`,
       { method: 'POST', body: data }
     );
     // Connecte aussi via Supabase client pour poser les cookies
     await supabase.auth.signInWithPassword({ email: data.email, password: data.password });
-    return { user: toUser(json.user), token: json.token || '' };
+    return { user: toUser(json.user) };
   },
 
   async logout() {

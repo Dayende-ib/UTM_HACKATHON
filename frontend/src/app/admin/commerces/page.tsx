@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Search, Trash2, CheckCircle, XCircle, Store, Pencil } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Search, Trash2, CheckCircle, XCircle, Store, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { adminService } from "@/services/admin.service";
 import { categorieService } from "@/services/categorie.service";
 import type { Commerce, Categorie } from "@/types/commerce";
+
+const ITEMS_PER_PAGE = 20;
 
 const emptyForm = {
   nom: "",
@@ -21,8 +23,11 @@ const emptyForm = {
 };
 
 export default function AdminCommercesPage() {
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [items, setItems] = useState<Commerce[]>([]);
+  const [total, setTotal] = useState(0);
   const [categories, setCategories] = useState<Categorie[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -30,27 +35,38 @@ export default function AdminCommercesPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
-  const fetchCommerces = async () => {
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPage(1);
+  }, [search]);
+
+  const fetchCommerces = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await adminService.getCommerces({ search: search || undefined });
+      const res = await adminService.getCommerces({ search: search || undefined, page, limit: ITEMS_PER_PAGE });
       setItems(res.commerces);
+      setTotal(res.total);
     } catch (err) {
       console.error("Erreur chargement commerces:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, page]);
 
   useEffect(() => {
     fetchCommerces();
+  }, [fetchCommerces]);
+
+  useEffect(() => {
     categorieService.getAll().then(setCategories).catch(() => setCategories([]));
   }, []);
 
-  const filtered = items.filter(
-    (c) =>
-      c.nom.toLowerCase().includes(search.toLowerCase()) ||
-      c.ville.toLowerCase().includes(search.toLowerCase())
-  );
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   const toggleStatus = async (id: string) => {
     try {
@@ -67,7 +83,11 @@ export default function AdminCommercesPage() {
     if (!confirm("Supprimer ce commerce ?")) return;
     try {
       await adminService.deleteCommerce(id);
-      setItems((prev) => prev.filter((c) => c.id !== id));
+      if (items.length === 1 && page > 1) {
+        setPage((p) => p - 1);
+      } else {
+        fetchCommerces();
+      }
     } catch (err) {
       console.error("Erreur suppression commerce:", err);
     }
@@ -109,7 +129,7 @@ export default function AdminCommercesPage() {
     }
   };
 
-  if (loading) {
+  if (loading && items.length === 0) {
     return (
       <div className="space-y-8">
         <div>
@@ -125,7 +145,7 @@ export default function AdminCommercesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-stone-900 tracking-tight">Gestion des commerces</h1>
-          <p className="text-stone-500 text-sm mt-2">{items.length} commerces au total</p>
+          <p className="text-stone-500 text-sm mt-2">{total} commerces au total</p>
         </div>
       </div>
 
@@ -134,9 +154,8 @@ export default function AdminCommercesPage() {
         <input
           type="text"
           placeholder="Rechercher un commerce..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && fetchCommerces()}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           className="w-full rounded-lg border border-stone-200 bg-white pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400/30 focus:border-primary-400 transition-all duration-200 hover:border-stone-300"
         />
       </div>
@@ -154,7 +173,7 @@ export default function AdminCommercesPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
-            {filtered.map((c) => (
+            {items.map((c) => (
               <tr key={c.id} className="hover:bg-stone-50/50 transition-colors">
                 <td className="px-5 py-4 font-semibold text-stone-900">{c.nom}</td>
                 <td className="px-5 py-4 text-stone-600">{c.ville}</td>
@@ -191,7 +210,7 @@ export default function AdminCommercesPage() {
       </div>
 
       <div className="md:hidden space-y-3">
-        {filtered.map((c) => (
+        {items.map((c) => (
           <div key={c.id} className="rounded-lg border border-stone-200 bg-white p-4 space-y-3 shadow-sm">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-stone-900">{c.nom}</h3>
@@ -216,12 +235,32 @@ export default function AdminCommercesPage() {
         ))}
       </div>
 
-      {filtered.length === 0 && (
+      {items.length === 0 && (
         <div className="text-center py-16">
           <div className="h-20 w-20 rounded-lg bg-stone-100 flex items-center justify-center mx-auto mb-4">
             <Store className="h-10 w-10 text-stone-300" />
           </div>
           <p className="text-stone-500 font-medium">Aucun commerce trouvé</p>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="h-9 w-9 flex items-center justify-center rounded-md border border-stone-200 text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="text-sm text-stone-500">Page {page} / {totalPages}</span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="h-9 w-9 flex items-center justify-center rounded-md border border-stone-200 text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
       )}
 

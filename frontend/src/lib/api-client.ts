@@ -4,7 +4,7 @@
  * construction du query string et gestion homogène des erreurs.
  */
 
-const TOKEN_KEY = 'supabase_token';
+import { supabase } from '@/lib/supabase/client';
 
 export class ApiError extends Error {
   status: number;
@@ -15,9 +15,15 @@ export class ApiError extends Error {
   }
 }
 
-function getToken(): string | null {
+// Lit le token depuis la session Supabase (pas un cache localStorage figé) :
+// le SDK rafraîchit l'access token en arrière-plan avant son expiration,
+// getSession() renvoie donc toujours un token à jour. Un cache manuel se
+// figeait après ~1h, faisant échouer silencieusement l'auth serveur (ex:
+// avis publiés comme "Anonyme" malgré un utilisateur toujours connecté côté UI).
+async function getToken(): Promise<string | null> {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem(TOKEN_KEY);
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
 }
 
 type QueryValue = string | number | boolean | null | undefined;
@@ -62,7 +68,7 @@ export async function apiFetch<T>(path: string, opts: ApiOptions = {}): Promise<
   }
 
   if (auth) {
-    const token = getToken();
+    const token = await getToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
   }
 

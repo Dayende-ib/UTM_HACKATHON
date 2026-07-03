@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, ChevronLeft, ChevronRight, Map as MapIcon, List, Mic, Loader2, Square, SlidersHorizontal, X, WifiOff } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
@@ -9,7 +9,6 @@ import { categorieService } from '@/services/categorie.service';
 import { CategoryFilter } from '@/components/commerces/category-filter';
 import { CommerceList } from '@/components/commerces/commerce-list';
 import MapLeaflet from '@/components/maps/map-leaflet';
-import { filterCommerces } from '@/utils/filter-commerces';
 import { resolveCategoryId } from '@/utils/voice-search';
 import { useVoiceSearch } from '@/hooks/useVoiceSearch';
 import { useToast } from '@/components/ui/toast';
@@ -19,9 +18,11 @@ import type { Commerce, Categorie } from '@/types/commerce';
 const cities = ['Toutes', 'Ouagadougou', 'Bobo-Dioulasso', 'Koudougou', 'Banfora', 'Ouahigouya'];
 const ratings = [0, 3, 3.5, 4, 4.5];
 const ITEMS_PER_PAGE = 9;
+const MAP_LIMIT = 200;
 
 export default function AnnuairePage() {
   const router = useRouter();
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState('Toutes');
@@ -30,21 +31,84 @@ export default function AnnuairePage() {
   const [showMap, setShowMap] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [commerces, setCommerces] = useState<Commerce[]>([]);
+  const [total, setTotal] = useState(0);
+  const [mapCommerces, setMapCommerces] = useState<Commerce[]>([]);
   const [categories, setCategories] = useState<Categorie[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { isRecording, isProcessing, error, result, startRecording, stopRecording, reset } = useVoiceSearch();
   const isOffline = useOffline();
 
+  // Débounce de la recherche texte : évite un appel réseau par frappe.
   useEffect(() => {
-    commerceService.getAll().then(setCommerces).catch(console.error).finally(() => setLoading(false));
+    const t = setTimeout(() => setSearchQuery(searchInput), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  useEffect(() => {
+    // Retour à la page 1 à chaque changement de critère : volontaire.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory, selectedCity, minRating]);
+
+  useEffect(() => {
     categorieService.getAll().then(setCategories).catch(console.error);
   }, []);
+
+  // Résultats paginés (vue liste) : ne charge que la page courante.
+  useEffect(() => {
+    let annule = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true);
+    commerceService
+      .search({
+        search: searchQuery || undefined,
+        categorieId: selectedCategory ?? undefined,
+        ville: selectedCity,
+        noteMin: minRating || undefined,
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+      })
+      .then((res) => {
+        if (annule) return;
+        setCommerces(res.commerces);
+        setTotal(res.total);
+      })
+      .catch(console.error)
+      .finally(() => !annule && setLoading(false));
+    return () => {
+      annule = true;
+    };
+  }, [searchQuery, selectedCategory, selectedCity, minRating, currentPage]);
+
+  // Vue carte : un lot plus large (mais toujours borné) pour afficher les pins, pas de pagination.
+  useEffect(() => {
+    if (!showMap) return;
+    let annule = false;
+    commerceService
+      .search({
+        search: searchQuery || undefined,
+        categorieId: selectedCategory ?? undefined,
+        ville: selectedCity,
+        noteMin: minRating || undefined,
+        page: 1,
+        limit: MAP_LIMIT,
+      })
+      .then((res) => {
+        if (!annule) setMapCommerces(res.commerces);
+      })
+      .catch(() => {
+        if (!annule) setMapCommerces([]);
+      });
+    return () => {
+      annule = true;
+    };
+  }, [showMap, searchQuery, selectedCategory, selectedCity, minRating]);
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search).get('q');
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (q) setSearchQuery(q);
+    if (q) setSearchInput(q);
   }, []);
 
   useEffect(() => {
@@ -54,7 +118,6 @@ export default function AnnuairePage() {
     if (categoryId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedCategory(categoryId);
-      setCurrentPage(1);
     }
   }, [categories]);
 
@@ -79,13 +142,12 @@ export default function AnnuairePage() {
       toast('success', 'Urgence détectée, redirection vers le mode urgence.');
     } else {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSearchQuery(result.texte || searchQuery);
+      setSearchInput(result.texte || searchInput);
       setSelectedCategory(categoryId);
-      setCurrentPage(1);
       toast('success', "Recherche vocale appliquée à l'annuaire.");
     }
     reset();
-  }, [categories, reset, result, router, searchQuery, toast]);
+  }, [categories, reset, result, router, searchInput, toast]);
 
   const handleVoiceClick = async () => {
     if (isProcessing) return;
@@ -93,13 +155,7 @@ export default function AnnuairePage() {
     await startRecording();
   };
 
-  const filtered = useMemo(
-    () => filterCommerces(commerces, { recherche: searchQuery, categorieId: selectedCategory, ville: selectedCity, noteMin: minRating }),
-    [commerces, searchQuery, selectedCategory, selectedCity, minRating]
-  );
-
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   // Pagination avec ellipsis
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -110,13 +166,12 @@ export default function AnnuairePage() {
       return acc;
     }, []);
 
-  const hasActiveFilters = Boolean(searchQuery || selectedCategory || selectedCity !== 'Toutes' || minRating > 0);
+  const hasActiveFilters = Boolean(searchInput || selectedCategory || selectedCity !== 'Toutes' || minRating > 0);
   const resetFilters = () => {
-    setSearchQuery('');
+    setSearchInput('');
     setSelectedCategory(null);
     setSelectedCity('Toutes');
     setMinRating(0);
-    setCurrentPage(1);
   };
 
   const FilterPanel = () => (
@@ -125,7 +180,7 @@ export default function AnnuairePage() {
         <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-400 mb-3">Ville</h3>
         <div className="flex flex-wrap gap-1.5">
           {cities.map((city) => (
-            <button key={city} onClick={() => { setSelectedCity(city); setCurrentPage(1); }}
+            <button key={city} onClick={() => setSelectedCity(city)}
               className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${selectedCity === city ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-600 border-stone-300 hover:border-stone-900'}`}>
               {city}
             </button>
@@ -136,7 +191,7 @@ export default function AnnuairePage() {
         <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-400 mb-3">Note minimum</h3>
         <div className="flex flex-wrap gap-1.5">
           {ratings.map((r) => (
-            <button key={r} onClick={() => { setMinRating(r); setCurrentPage(1); }}
+            <button key={r} onClick={() => setMinRating(r)}
               className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${minRating === r ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-600 border-stone-300 hover:border-stone-900'}`}>
               {r === 0 ? 'Toutes' : `${r}+`}
             </button>
@@ -159,8 +214,8 @@ export default function AnnuairePage() {
               <input
                 type="text"
                 placeholder="Rechercher un artisan, un service, une ville..."
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="w-full h-11 pl-10 pr-3 text-sm border border-stone-300 rounded-l-md focus:outline-none focus:ring-1 focus:ring-stone-900 focus:border-stone-900"
               />
               <button
@@ -179,7 +234,7 @@ export default function AnnuairePage() {
         </div>
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-5 flex items-center gap-3">
-          <CategoryFilter value={selectedCategory} onChange={(id) => { setSelectedCategory(id); setCurrentPage(1); }} />
+          <CategoryFilter value={selectedCategory} onChange={setSelectedCategory} />
           <button
             onClick={() => setShowFilters(true)}
             className="lg:hidden shrink-0 flex items-center gap-1.5 h-9 px-3 text-sm border border-stone-300 rounded-md text-stone-600 hover:border-stone-900 transition-colors"
@@ -209,7 +264,7 @@ export default function AnnuairePage() {
               onClick={() => setShowFilters(false)}
               className="mt-6 w-full h-11 bg-stone-900 text-white font-medium rounded-md text-sm"
             >
-              Voir les résultats ({filtered.length})
+              Voir les résultats ({total})
             </button>
           </div>
         </div>
@@ -226,7 +281,7 @@ export default function AnnuairePage() {
           <div>
             <div className="flex items-center justify-between mb-5">
               <p className="text-sm text-stone-500 flex items-center gap-1.5 flex-wrap">
-                <span className="font-medium text-stone-900">{filtered.length}</span> résultat{filtered.length !== 1 ? 's' : ''}
+                <span className="font-medium text-stone-900">{total}</span> résultat{total !== 1 ? 's' : ''}
                 {hasActiveFilters && (
                   <button onClick={resetFilters} className="text-stone-900 underline underline-offset-2 hover:text-stone-600">
                     Réinitialiser les filtres
@@ -252,7 +307,7 @@ export default function AnnuairePage() {
             {showMap ? (
               <MapLeaflet
                 className="h-[560px] w-full"
-                markers={filtered.map((c) => ({
+                markers={mapCommerces.map((c) => ({
                   id: c.id,
                   position: [c.latitude, c.longitude],
                   nom: c.nom,
@@ -264,7 +319,7 @@ export default function AnnuairePage() {
                 onMarkerClick={(id) => router.push(ROUTES.COMMERCE(id))}
               />
             ) : (
-              <CommerceList commerces={paginated} loading={loading} />
+              <CommerceList commerces={commerces} loading={loading} />
             )}
 
             {!showMap && totalPages > 1 && (

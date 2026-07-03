@@ -61,6 +61,14 @@ export interface CommerceFilters {
   ville?: string;
   search?: string;
   artisanId?: string;
+  noteMin?: number;
+}
+
+export interface PaginatedCommerces {
+  commerces: Commerce[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export const commerceService = {
@@ -87,6 +95,45 @@ export const commerceService = {
         cached = cached.filter((c) => c.nom.toLowerCase().includes(q) || c.description.toLowerCase().includes(q));
       }
       return cached;
+    }
+  },
+
+  /** Recherche paginée côté serveur (annuaire) : évite de charger tout le catalogue d'un coup. */
+  async search(filters: CommerceFilters & { page?: number; limit?: number }): Promise<PaginatedCommerces> {
+    const page = filters.page ?? 1;
+    const limit = filters.limit ?? 9;
+    try {
+      const data = await apiFetch<{ commerces?: Record<string, unknown>[]; total?: number }>(API, {
+        query: {
+          categorie: filters.categorieId,
+          search: filters.search,
+          artisanId: filters.artisanId,
+          ville: filters.ville,
+          noteMin: filters.noteMin,
+          page,
+          limit,
+        },
+      });
+      const commerces = (data.commerces || []).map(mapCommerce);
+      if (commerces.length > 0) void db.commerces.bulkPut(commerces).catch(() => {});
+      return { commerces, total: data.total ?? commerces.length, page, limit };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      // Panne réseau : filtre + pagine le cache local.
+      let cached = await db.commerces.toArray();
+      if (filters.categorieId) cached = cached.filter((c) => c.categorieId === filters.categorieId);
+      if (filters.artisanId) cached = cached.filter((c) => c.artisanId === filters.artisanId);
+      if (filters.ville && filters.ville !== 'Toutes') {
+        cached = cached.filter((c) => c.ville.toLowerCase() === filters.ville!.toLowerCase());
+      }
+      if (filters.noteMin) cached = cached.filter((c) => c.note >= filters.noteMin!);
+      if (filters.search) {
+        const q = filters.search.toLowerCase();
+        cached = cached.filter((c) => c.nom.toLowerCase().includes(q) || c.description.toLowerCase().includes(q));
+      }
+      const total = cached.length;
+      const start = (page - 1) * limit;
+      return { commerces: cached.slice(start, start + limit), total, page, limit };
     }
   },
 

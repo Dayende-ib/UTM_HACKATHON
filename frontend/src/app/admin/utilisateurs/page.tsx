@@ -1,40 +1,55 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { Search, Trash2, UserCheck, UserX } from 'lucide-react';
+import { Search, Trash2, UserCheck, UserX, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Utilisateur } from '@/types/utilisateur';
 import { adminService } from '@/services/admin.service';
 
+const ITEMS_PER_PAGE = 20;
+
 export default function UtilisateursPage() {
   const [users, setUsers] = useState<Utilisateur[]>([]);
+  const [total, setTotal] = useState(0);
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  const fetchUsers = async () => {
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPage(1);
+  }, [search, roleFilter]);
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await adminService.getUsers({ search: search || undefined, role: roleFilter !== 'all' ? roleFilter : undefined });
+      const res = await adminService.getUsers({
+        search: search || undefined,
+        role: roleFilter !== 'all' ? roleFilter : undefined,
+        page,
+        limit: ITEMS_PER_PAGE,
+      });
       setUsers(res.users);
+      setTotal(res.total);
     } catch (err) {
       console.error('Erreur chargement utilisateurs:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, roleFilter, page]);
 
   useEffect(() => {
     fetchUsers();
-  }, [roleFilter]);
+  }, [fetchUsers]);
 
-  const filteredUsers = users.filter((u) => {
-    if (roleFilter !== 'all') return true; // already filtered server-side
-    const matchesSearch =
-      u.nom.toLowerCase().includes(search.toLowerCase()) ||
-      u.prenom.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase());
-    return matchesSearch;
-  });
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   const toggleActive = async (id: string) => {
     const user = users.find((u) => u.id === id);
@@ -54,13 +69,18 @@ export default function UtilisateursPage() {
     if (!confirm('Supprimer cet utilisateur ?')) return;
     try {
       await adminService.deleteUser(id);
-      setUsers((prev) => prev.filter((u) => u.id !== id));
+      // Recharge depuis le serveur pour garder le total et la pagination cohérents.
+      if (users.length === 1 && page > 1) {
+        setPage((p) => p - 1);
+      } else {
+        fetchUsers();
+      }
     } catch (err) {
       console.error('Erreur suppression utilisateur:', err);
     }
   };
 
-  if (loading) {
+  if (loading && users.length === 0) {
     return (
       <div className="space-y-8">
         <div>
@@ -75,7 +95,7 @@ export default function UtilisateursPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-stone-900 tracking-tight">Utilisateurs</h1>
-        <p className="text-stone-500 text-sm mt-2">{filteredUsers.length} utilisateur(s)</p>
+        <p className="text-stone-500 text-sm mt-2">{total} utilisateur(s)</p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -84,9 +104,8 @@ export default function UtilisateursPage() {
           <input
             type="text"
             placeholder="Rechercher un utilisateur..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && fetchUsers()}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="w-full pl-11 pr-4 py-3 border border-stone-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-400/30 focus:border-primary-400 outline-none transition-all duration-200 hover:border-stone-300"
           />
         </div>
@@ -116,7 +135,7 @@ export default function UtilisateursPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {filteredUsers.map((user) => (
+              {users.map((user) => (
                 <tr key={user.id} className="hover:bg-stone-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -188,12 +207,32 @@ export default function UtilisateursPage() {
             </tbody>
           </table>
         </div>
-        {filteredUsers.length === 0 && (
+        {users.length === 0 && (
           <div className="text-center py-12">
             <p className="text-stone-400 text-sm font-medium">Aucun utilisateur trouvé</p>
           </div>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="h-9 w-9 flex items-center justify-center rounded-md border border-stone-200 text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="text-sm text-stone-500">Page {page} / {totalPages}</span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="h-9 w-9 flex items-center justify-center rounded-md border border-stone-200 text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

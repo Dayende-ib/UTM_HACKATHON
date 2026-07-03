@@ -10,6 +10,8 @@ export async function GET(request: Request) {
     const categorie = searchParams.get('categorie')
     const search = searchParams.get('search')
     const artisanId = searchParams.get('artisanId')
+    const ville = searchParams.get('ville')
+    const noteMin = searchParams.get('noteMin')
 
     const from = (page - 1) * limit
     const to = from + limit - 1
@@ -30,6 +32,12 @@ export async function GET(request: Request) {
     if (search) {
       const s = search.toLowerCase()
       query = query.or(`nom.ilike.%${s}%,description.ilike.%${s}%,adresse.ilike.%${s}%`)
+    }
+    if (ville && ville !== 'Toutes') {
+      query = query.ilike('ville', ville)
+    }
+    if (noteMin) {
+      query = query.gte('note_moyenne', parseFloat(noteMin))
     }
 
     const { data, error, count } = await query

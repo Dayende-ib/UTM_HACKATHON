@@ -1,35 +1,46 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Star, Trash2, CheckCircle, AlertTriangle, MessageSquare } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Star, Trash2, CheckCircle, AlertTriangle, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { adminService } from "@/services/admin.service";
 import type { Commentaire } from "@/types/commentaire";
 
 type Status = "all" | "approved" | "spam";
+const ITEMS_PER_PAGE = 20;
 
 export default function AdminCommentairesPage() {
   const [filter, setFilter] = useState<Status>("all");
+  const [page, setPage] = useState(1);
   const [items, setItems] = useState<Commentaire[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const fetchAvis = async () => {
+  const fetchAvis = useCallback(async () => {
+    setLoading(true);
     try {
       const filtre = filter === "all" ? "tous" : filter === "approved" ? "approuves" : "spam";
-      const res = await adminService.getAvis({ filtre });
+      const res = await adminService.getAvis({ filtre, page, limit: ITEMS_PER_PAGE });
       setItems(res.avis);
+      setTotal(res.total);
     } catch (err) {
       console.error("Erreur chargement avis:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, page]);
 
   useEffect(() => {
-    setLoading(true);
-    fetchAvis();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPage(1);
   }, [filter]);
+
+  useEffect(() => {
+    fetchAvis();
+  }, [fetchAvis]);
+
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   const approve = async (id: string) => {
     try {
@@ -57,7 +68,11 @@ export default function AdminCommentairesPage() {
     if (!confirm("Supprimer ce commentaire ?")) return;
     try {
       await adminService.deleteAvis(id);
-      setItems((prev) => prev.filter((c) => c.id !== id));
+      if (items.length === 1 && page > 1) {
+        setPage((p) => p - 1);
+      } else {
+        fetchAvis();
+      }
     } catch (err) {
       console.error("Erreur suppression avis:", err);
     }
@@ -73,7 +88,7 @@ export default function AdminCommentairesPage() {
     return c.auteurId ?? "Anonyme";
   };
 
-  if (loading) {
+  if (loading && items.length === 0) {
     return (
       <div className="space-y-8">
         <div>
@@ -88,7 +103,7 @@ export default function AdminCommentairesPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-stone-900 tracking-tight">Gestion des commentaires</h1>
-        <p className="text-stone-500 text-sm mt-2">{items.length} commentaires au total</p>
+        <p className="text-stone-500 text-sm mt-2">{total} commentaires au total</p>
       </div>
 
       <div className="flex gap-2">
@@ -169,6 +184,26 @@ export default function AdminCommentairesPage() {
             <MessageSquare className="h-10 w-10 text-stone-300" />
           </div>
           <p className="text-stone-500 font-medium">Aucun commentaire trouvé</p>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="h-9 w-9 flex items-center justify-center rounded-md border border-stone-200 text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="text-sm text-stone-500">Page {page} / {totalPages}</span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="h-9 w-9 flex items-center justify-center rounded-md border border-stone-200 text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
       )}
     </div>
