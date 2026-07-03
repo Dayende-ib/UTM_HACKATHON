@@ -7,7 +7,7 @@ import { Menu, X } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { ROUTES } from '@/constants/routes';
 import Sidebar from '@/components/layout/sidebar';
-import MobileNav from '@/components/layout/mobile-nav';
+import DashboardMobileNav from '@/components/layout/dashboard-mobile-nav';
 
 export default function DashboardLayout({
   children,
@@ -83,7 +83,7 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
-      <MobileNav />
+      <DashboardMobileNav role={user.role === 'artisan' ? 'artisan' : 'citoyen'} />
     </div>
   );
 }

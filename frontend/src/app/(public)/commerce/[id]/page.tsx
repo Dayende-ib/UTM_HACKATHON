@@ -199,7 +199,7 @@ export default function CommerceDetailPage({ params }: { params: Promise<{ id: s
   const handleSubmitReview = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!reviewText.trim() || reviewRating === 0) return;
+      if (reviewText.trim().length < 10 || reviewRating === 0) return;
       setSubmitting(true);
       try {
         const created = await commentaireService.create({
@@ -441,10 +441,13 @@ export default function CommerceDetailPage({ params }: { params: Promise<{ id: s
                   rows={3}
                   className="w-full px-3 py-2 border border-stone-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-stone-900 focus:border-stone-900 resize-none"
                 />
+                {reviewText.trim().length > 0 && reviewText.trim().length < 10 && (
+                  <p className="mt-1 text-xs text-error-600">Votre avis doit contenir au moins 10 caractères.</p>
+                )}
                 <div className="mt-2.5 flex items-center gap-2">
                   <button
                     type="submit"
-                    disabled={!reviewText.trim() || reviewRating === 0 || submitting}
+                    disabled={reviewText.trim().length < 10 || reviewRating === 0 || submitting}
                     className="inline-flex items-center gap-2 h-9 px-4 bg-stone-900 text-white text-sm font-medium rounded-md hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
