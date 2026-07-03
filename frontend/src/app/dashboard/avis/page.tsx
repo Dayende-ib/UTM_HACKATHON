@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAuthStore } from '@/stores/auth.store';
 import { commentaireService } from '@/services/commentaire.service';
 import { useToast } from '@/components/ui/toast';
+import { Badge } from '@/components/ui/badge';
 import { ROUTES } from '@/constants/routes';
 import { Star, Trash2, MessageSquare, Loader2 } from 'lucide-react';
 import type { Commentaire } from '@/types/commentaire';
@@ -103,15 +104,20 @@ export default function MesAvisPage() {
                       {new Date(a.dateCreation).toLocaleDateString('fr-FR')}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 mb-2">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-3.5 w-3.5 ${
-                          i < a.note ? 'fill-primary-600 text-primary-600' : 'text-stone-300'
-                        }`}
-                      />
-                    ))}
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-3.5 w-3.5 ${
+                            i < a.note ? 'fill-primary-600 text-primary-600' : 'text-stone-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    {a.iaScore !== undefined && (
+                      <Badge variant="info" size="sm">Note IA : {(a.iaScore * 5).toFixed(1)}/5</Badge>
+                    )}
                   </div>
                   <p className="text-sm text-stone-600 leading-relaxed">{a.texte}</p>
                 </div>

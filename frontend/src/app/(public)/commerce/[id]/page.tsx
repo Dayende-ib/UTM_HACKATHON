@@ -504,6 +504,14 @@ export default function CommerceDetailPage({ params }: { params: Promise<{ id: s
                             </div>
                           </div>
                           <div className="ml-auto flex items-center gap-2">
+                            {review.iaScore !== undefined && (
+                              <span
+                                className="text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded bg-info-50 text-info-700"
+                                title="Note attribuée par l'IA"
+                              >
+                                Note IA : {(review.iaScore * 5).toFixed(1)}/5
+                              </span>
+                            )}
                             {review.sentiment && (
                               <span
                                 className={`text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded ${SENTIMENT_BADGE[review.sentiment].cls}`}

@@ -124,7 +124,7 @@ export default function AdminCommentairesPage() {
                     </Badge>
                   )}
                   {c.iaScore !== undefined && (
-                    <Badge variant="info">IA: {c.iaScore.toFixed(1)}</Badge>
+                    <Badge variant="info">Note IA : {(c.iaScore * 5).toFixed(1)}/5</Badge>
                   )}
                 </div>
                 <div className="flex items-center gap-1 mb-2">
