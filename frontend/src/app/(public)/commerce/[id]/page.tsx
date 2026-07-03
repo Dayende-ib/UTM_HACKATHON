@@ -157,7 +157,7 @@ export default function CommerceDetailPage({ params }: { params: Promise<{ id: s
     };
   }, [id]);
 
-  // Résumé IA des avis (backend /api/ai/summarize) — déclenché dès qu'il y a
+  // Résumé IA des avis (backend /api/ai/summarize) - déclenché dès qu'il y a
   // assez de commentaires exploitables.
   useEffect(() => {
     const textes = reviews.map((r) => r.texte).filter((t) => t && t.trim().length >= 2);
@@ -300,7 +300,7 @@ export default function CommerceDetailPage({ params }: { params: Promise<{ id: s
                   {isOffline && (
                     <p className="inline-flex items-center gap-1 text-xs text-primary-600 mt-1.5">
                       <WifiOff className="h-3 w-3" />
-                      Données en cache — hors ligne
+                      Données en cache - hors ligne
                     </p>
                   )}
                 </div>

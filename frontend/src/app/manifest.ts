@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'ArtisanBF — Annuaire des artisans du Burkina Faso',
+    name: 'ArtisanBF - Annuaire des artisans du Burkina Faso',
     short_name: 'ArtisanBF',
     description:
       "L'annuaire intelligent des artisans du Burkina Faso. Trouvez, contactez et évaluez le bon artisan près de chez vous.",

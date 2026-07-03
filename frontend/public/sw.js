@@ -1,4 +1,4 @@
-// Service worker minimal — installabilité + fallback hors-ligne.
+// Service worker minimal - installabilité + fallback hors-ligne.
 // Volontairement PAS de cache des routes /api/* : les données (commerces,
 // avis, catégories...) doivent toujours venir du réseau pour rester à jour.
 // Seul l'app-shell (page d'accueil, page hors-ligne, assets statiques

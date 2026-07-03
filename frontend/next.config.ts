@@ -83,7 +83,7 @@ const nextConfig: NextConfig = {
 
     // Each `:path*` rule already matches its own base path with zero segments
     // (e.g. `/api/commerces/:path*` matches plain `/api/commerces`), so a
-    // separate exact-match rule for the same base is redundant — and on
+    // separate exact-match rule for the same base is redundant - and on
     // Vercel, having both creates a routing ambiguity that resolves as a
     // 308 redirect to the exact same URL (infinite loop for the caller).
     return [

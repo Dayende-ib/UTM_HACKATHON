@@ -2,7 +2,7 @@
  * Requêtes Pexels en anglais par **slug** de catégorie : de meilleurs
  * résultats qu'avec les noms de métiers en français. Indexé par slug (stable,
  * présent en base) plutôt que par id, afin de fonctionner avec les vraies
- * catégories Supabase. Partagé client/serveur — aucun secret ici.
+ * catégories Supabase. Partagé client/serveur - aucun secret ici.
  */
 export const CATEGORY_PEXELS_QUERY: Record<string, string> = {
   'mecanicien': 'motorcycle mechanic repair shop',

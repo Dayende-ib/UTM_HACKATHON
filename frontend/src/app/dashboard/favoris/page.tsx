@@ -45,7 +45,7 @@ export default function DashboardFavorisPage() {
           {isOffline && !loading && (
             <span className="inline-flex items-center gap-1 text-primary-600">
               <WifiOff className="h-3 w-3" />
-              données en cache — hors ligne
+              données en cache - hors ligne
             </span>
           )}
         </p>

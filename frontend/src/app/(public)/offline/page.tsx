@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { WifiOff } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 
-export const metadata = { title: 'Hors ligne — ArtisanBF' };
+export const metadata = { title: 'Hors ligne - ArtisanBF' };
 
 export default function OfflinePage() {
   return (
