@@ -1,15 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuthStore } from '@/stores/auth.store';
 import { commerceService } from '@/services/commerce.service';
 import { categorieService } from '@/services/categorie.service';
+import { utilisateurService } from '@/services/utilisateur.service';
 import { uploadService } from '@/services/upload.service';
 import { geolocationService } from '@/services/geolocation.service';
 import { useToast } from '@/components/ui/toast';
-import { ROUTES } from '@/constants/routes';
 import { Plus, Edit2, Trash2, Eye, Star, X, Store, Loader2, ImagePlus, LocateFixed, MapPin } from 'lucide-react';
 import MapLeaflet from '@/components/maps/map-leaflet';
 import type { Commerce, Categorie } from '@/types/commerce';
@@ -18,19 +17,14 @@ import type { Commerce, Categorie } from '@/types/commerce';
 const DEFAULT_COORDS = { latitude: 12.3714, longitude: -1.5197 };
 
 export default function CommercesPage() {
-  const { user } = useAuthStore();
-  const router = useRouter();
+  const { user, updateUser } = useAuthStore();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (user && user.role !== 'artisan') {
-      router.push(ROUTES.DASHBOARD);
-    }
-  }, [user, router]);
   const [commerces, setCommerces] = useState<Commerce[]>([]);
   const [categories, setCategories] = useState<Categorie[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [becomingArtisan, setBecomingArtisan] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [editingCommerce, setEditingCommerce] = useState<Commerce | null>(null);
@@ -49,7 +43,10 @@ export default function CommercesPage() {
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || user.role !== 'artisan') {
+      setLoading(false);
+      return;
+    }
     let annule = false;
     commerceService
       .getAll({ artisanId: user.id })
@@ -59,7 +56,7 @@ export default function CommercesPage() {
     return () => {
       annule = true;
     };
-  }, [user?.id, toast]);
+  }, [user?.id, user?.role, toast]);
 
   useEffect(() => {
     categorieService.getAll().then(setCategories).catch(() => setCategories([]));
@@ -159,6 +156,20 @@ export default function CommercesPage() {
     }
   };
 
+  const handleBecomeArtisan = async () => {
+    if (!user) return;
+    setBecomingArtisan(true);
+    try {
+      const updated = await utilisateurService.becomeArtisan(user.id);
+      updateUser({ role: updated.role as 'artisan' });
+      toast('success', 'Compte artisan activé. Vous pouvez ajouter votre premier commerce.');
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : "Impossible d'activer le compte artisan.");
+    } finally {
+      setBecomingArtisan(false);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     const prev = commerces;
     setCommerces((list) => list.filter((c) => c.id !== id)); // optimiste
@@ -182,7 +193,29 @@ export default function CommercesPage() {
   };
 
   if (user && user.role !== 'artisan') {
-    return null;
+    return (
+      <div className="max-w-2xl space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-stone-900 tracking-tight">Mes commerces</h1>
+          <p className="text-stone-500 text-sm mt-1.5">Activez votre espace artisan pour publier un commerce.</p>
+        </div>
+        <div className="rounded-lg border border-stone-200 bg-white p-8">
+          <Store className="h-10 w-10 text-stone-300 mb-4" />
+          <h2 className="text-lg font-semibold text-stone-900 mb-2">Devenir artisan</h2>
+          <p className="text-sm text-stone-600 mb-5">
+            Votre compte est actuellement citoyen. Une fois activé comme artisan, vous pourrez créer et gérer vos commerces depuis cette page.
+          </p>
+          <button
+            onClick={handleBecomeArtisan}
+            disabled={becomingArtisan}
+            className="inline-flex items-center gap-2 h-9 px-4 bg-stone-900 hover:bg-stone-800 text-white font-medium rounded-md text-sm transition-colors disabled:opacity-50"
+          >
+            {becomingArtisan ? <Loader2 className="h-4 w-4 animate-spin" /> : <Store className="h-4 w-4" />}
+            Activer mon compte artisan
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

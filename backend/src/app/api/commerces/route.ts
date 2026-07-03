@@ -55,6 +55,20 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { nom, description, categorieId, adresse, ville, latitude, longitude, telephone, whatsapp, email, photos } = body
 
+    const { data: profil, error: profileError } = await supabase
+      .from('utilisateurs')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError) {
+      return Response.json({ error: profileError.message }, { status: 500 })
+    }
+
+    if (profil?.role !== 'artisan' && profil?.role !== 'admin') {
+      return Response.json({ error: 'Vous devez devenir artisan pour publier un commerce' }, { status: 403 })
+    }
+
     if (!nom || !categorieId || !adresse || !ville) {
       return Response.json({ error: 'Les champs nom, categorieId, adresse et ville sont requis' }, { status: 400 })
     }

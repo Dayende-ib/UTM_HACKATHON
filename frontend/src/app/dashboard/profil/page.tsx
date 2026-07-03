@@ -5,7 +5,8 @@ import Image from 'next/image';
 import { useAuthStore } from '@/stores/auth.store';
 import { utilisateurService } from '@/services/utilisateur.service';
 import { useToast } from '@/components/ui/toast';
-import { Camera, Lock, Trash2, Save, Loader2 } from 'lucide-react';
+import { Camera, Lock, Trash2, Save, Loader2, Store, ArrowRight } from 'lucide-react';
+import { ROUTES } from '@/constants/routes';
 
 export default function ProfilPage() {
   const { user, logout, updateUser } = useAuthStore();
@@ -21,6 +22,7 @@ export default function ProfilPage() {
   });
   const [saving, setSaving] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [becomingArtisan, setBecomingArtisan] = useState(false);
 
   const inputClass =
     'w-full h-10 px-3 border border-stone-300 rounded-md text-sm outline-none focus:ring-1 focus:ring-stone-900 focus:border-stone-900';
@@ -62,6 +64,20 @@ export default function ProfilPage() {
       toast('error', err instanceof Error ? err.message : 'Erreur lors du changement de mot de passe.');
     } finally {
       setChangingPassword(false);
+    }
+  };
+
+  const handleBecomeArtisan = async () => {
+    if (!user || user.role !== 'citoyen') return;
+    setBecomingArtisan(true);
+    try {
+      const updated = await utilisateurService.becomeArtisan(user.id);
+      updateUser({ role: updated.role as 'artisan' });
+      toast('success', 'Votre compte artisan est activé. Vous pouvez publier vos commerces.');
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : "Impossible d'activer le compte artisan.");
+    } finally {
+      setBecomingArtisan(false);
     }
   };
 
@@ -145,6 +161,39 @@ export default function ProfilPage() {
           </div>
         </div>
       </div>
+
+      {user?.role === 'citoyen' && (
+        <div className="rounded-lg border border-stone-200 bg-white p-6">
+          <div className="flex items-start gap-4">
+            <div className="h-10 w-10 rounded-md bg-stone-900 text-white flex items-center justify-center shrink-0">
+              <Store className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-semibold text-stone-900">Devenir artisan</h2>
+              <p className="mt-1 text-sm text-stone-600">
+                Activez votre espace artisan pour publier et gérer vos commerces.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  onClick={handleBecomeArtisan}
+                  disabled={becomingArtisan}
+                  className="inline-flex items-center gap-2 h-9 px-4 bg-stone-900 hover:bg-stone-800 text-white font-medium rounded-md text-sm transition-colors disabled:opacity-50"
+                >
+                  {becomingArtisan ? <Loader2 className="h-4 w-4 animate-spin" /> : <Store className="h-4 w-4" />}
+                  Activer mon compte artisan
+                </button>
+                <a
+                  href={ROUTES.DASHBOARD_COMMERCES}
+                  className="inline-flex items-center gap-2 h-9 px-4 bg-stone-100 hover:bg-stone-200 text-stone-800 font-medium rounded-md text-sm transition-colors"
+                >
+                  Mes commerces
+                  <ArrowRight className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-lg border border-stone-200 p-6">
         <h2 className="text-base font-semibold text-stone-900 mb-4 flex items-center gap-2">

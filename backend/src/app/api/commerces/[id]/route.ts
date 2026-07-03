@@ -35,6 +35,32 @@ export async function PUT(
 
     const supabase = createServiceClient()
     const body = await request.json()
+    const { id } = await params
+
+    const { data: existing, error: existingError } = await supabase
+      .from('commerces')
+      .select('artisan_id')
+      .eq('id', id)
+      .single()
+
+    if (existingError || !existing) {
+      return Response.json({ error: 'Commerce non trouvé' }, { status: 404 })
+    }
+
+    const { data: profil, error: profileError } = await supabase
+      .from('utilisateurs')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError) {
+      return Response.json({ error: profileError.message }, { status: 500 })
+    }
+
+    const canManage = existing.artisan_id === user.id || profil?.role === 'admin'
+    if (!canManage) {
+      return Response.json({ error: 'Vous ne pouvez modifier que vos propres commerces' }, { status: 403 })
+    }
 
     // Le frontend envoie du camelCase (categorieId, ...) mais les colonnes
     // Supabase sont en snake_case. On mappe explicitement les champs autorisés.
@@ -66,7 +92,7 @@ export async function PUT(
     const { data: commerce, error } = await supabase
       .from('commerces')
       .update(updates)
-      .eq('id', (await params).id)
+      .eq('id', id)
       .select('*, categories(*), utilisateurs(id, nom, prenom)')
       .single()
 
@@ -91,10 +117,36 @@ export async function DELETE(
     }
 
     const supabase = createServiceClient()
+    const { id } = await params
+    const { data: existing, error: existingError } = await supabase
+      .from('commerces')
+      .select('artisan_id')
+      .eq('id', id)
+      .single()
+
+    if (existingError || !existing) {
+      return Response.json({ error: 'Commerce non trouvé' }, { status: 404 })
+    }
+
+    const { data: profil, error: profileError } = await supabase
+      .from('utilisateurs')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError) {
+      return Response.json({ error: profileError.message }, { status: 500 })
+    }
+
+    const canManage = existing.artisan_id === user.id || profil?.role === 'admin'
+    if (!canManage) {
+      return Response.json({ error: 'Vous ne pouvez supprimer que vos propres commerces' }, { status: 403 })
+    }
+
     const { error } = await supabase
       .from('commerces')
       .delete()
-      .eq('id', (await params).id)
+      .eq('id', id)
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 })

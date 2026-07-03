@@ -1,10 +1,12 @@
 import { apiFetch } from '@/lib/api-client';
+import type { UserRole } from '@/types/auth';
 
 export interface UpdateProfileData {
   nom?: string;
   prenom?: string;
   telephone?: string;
   password?: string;
+  role?: Extract<UserRole, 'artisan'>;
 }
 
 export interface UpdatedProfile {
@@ -22,5 +24,9 @@ export const utilisateurService = {
       auth: true,
       body: data,
     });
+  },
+
+  async becomeArtisan(id: string): Promise<UpdatedProfile> {
+    return this.updateProfile(id, { role: 'artisan' });
   },
 };

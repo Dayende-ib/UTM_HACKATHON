@@ -8,6 +8,7 @@ const updateSchema = z.object({
   prenom: z.string().min(1).optional(),
   telephone: z.string().optional(),
   password: z.string().min(6, 'Le mot de passe doit contenir au moins 6 caractères').optional(),
+  role: z.literal('artisan').optional(),
 })
 
 // PUT /api/utilisateurs/[id] — mise à jour de son propre profil (nom, prénom,
@@ -42,7 +43,7 @@ export async function PUT(
       )
     }
 
-    const { nom, prenom, telephone, password } = parsed.data
+    const { nom, prenom, telephone, password, role } = parsed.data
 
     if (password) {
       const { error: pwError } = await supabase.auth.admin.updateUserById(targetId, { password })
@@ -55,6 +56,26 @@ export async function PUT(
     if (nom !== undefined) profileUpdate.nom = nom
     if (prenom !== undefined) profileUpdate.prenom = prenom
     if (telephone !== undefined) profileUpdate.telephone = telephone
+    if (role === 'artisan') {
+      const { data: currentProfile, error: profileError } = await supabase
+        .from('utilisateurs')
+        .select('role')
+        .eq('id', targetId)
+        .single()
+
+      if (profileError) {
+        return NextResponse.json({ error: profileError.message }, { status: 500 })
+      }
+
+      if (currentProfile?.role === 'admin') {
+        return NextResponse.json(
+          { error: 'Un administrateur ne peut pas changer de rôle via ce flux' },
+          { status: 403 }
+        )
+      }
+
+      profileUpdate.role = 'artisan'
+    }
 
     let profil = null
     if (Object.keys(profileUpdate).length > 0) {
