@@ -70,7 +70,7 @@ export default function AdminCommentairesPage() {
 
   const getAuteurName = (c: Commentaire) => {
     if (c.auteur?.prenom && c.auteur?.nom) return `${c.auteur.prenom} ${c.auteur.nom}`;
-    return c.auteurId;
+    return c.auteurId ?? "Anonyme";
   };
 
   if (loading) {

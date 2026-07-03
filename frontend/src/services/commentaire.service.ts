@@ -17,7 +17,7 @@ export const commentaireService = {
   async create(data: {
     texte: string;
     note: number;
-    auteurId: string;
+    auteurId?: string | null;
     commerceId: string;
   }): Promise<Commentaire> {
     return apiFetch<Commentaire>(API, {

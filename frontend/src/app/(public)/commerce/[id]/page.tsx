@@ -200,16 +200,12 @@ export default function CommerceDetailPage({ params }: { params: Promise<{ id: s
     async (e: React.FormEvent) => {
       e.preventDefault();
       if (!reviewText.trim() || reviewRating === 0) return;
-      if (!user) {
-        notify('error', 'Connectez-vous pour laisser un avis.');
-        return;
-      }
       setSubmitting(true);
       try {
         const created = await commentaireService.create({
           texte: reviewText.trim(),
           note: reviewRating,
-          auteurId: user.id,
+          auteurId: user?.id ?? null,
           commerceId: id,
         });
         setReviews((prev) => [created, ...prev]);

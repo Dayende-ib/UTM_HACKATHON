@@ -48,7 +48,9 @@ function ConnexionForm() {
       const user = useAuthStore.getState().user;
       const redirect = searchParams.get('redirect');
       const defaultRoute = user?.role === 'admin' ? ROUTES.ADMIN : ROUTES.DASHBOARD;
-      router.push(redirect || defaultRoute);
+      const destination = redirect || defaultRoute;
+      router.refresh();
+      window.location.assign(destination);
     } catch {
       setFormError('Identifiants incorrects. Veuillez réessayer.');
     }

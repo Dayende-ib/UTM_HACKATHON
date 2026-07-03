@@ -16,7 +16,7 @@ export function useComments() {
     async (data: {
       texte: string;
       note: number;
-      auteurId: string;
+      auteurId?: string | null;
       commerceId: string;
     }): Promise<Commentaire> => {
       const newComment = await commentaireService.create(data);

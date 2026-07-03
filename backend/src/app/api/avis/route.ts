@@ -20,6 +20,7 @@ export async function GET(request: Request) {
     let query = supabase
       .from('avis')
       .select('*, utilisateurs(id, nom), commerces(id, nom, ville)', { count: 'exact' })
+      .eq('is_spam', false)
       .range(from, to)
       .order('created_at', { ascending: false })
 
@@ -60,15 +61,22 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const user = await getUser(request)
-    if (!user) {
-      return Response.json({ error: 'Non autorisé' }, { status: 401 })
-    }
-
     const body = await request.json()
     const { commerce_id, texte, note } = body
 
     if (!commerce_id || !texte || !note) {
       return Response.json({ error: 'commerce_id, texte et note requis' }, { status: 400 })
+    }
+
+    const commentaire = String(texte).trim()
+    const rating = Number(note)
+
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      return Response.json({ error: 'note invalide' }, { status: 400 })
+    }
+
+    if (commentaire.length < 10 || commentaire.length > 500) {
+      return Response.json({ error: 'texte invalide' }, { status: 400 })
     }
 
     // Analyse IA
@@ -82,7 +90,7 @@ export async function POST(request: Request) {
         model: process.env.AI_MODEL || 'llama-3.1-8b-instant',
         messages: [
           { role: 'system', content: ANALYZE_SYSTEM },
-          { role: 'user', content: `Analyse ce commentaire :\n\n${texte}` },
+          { role: 'user', content: `Analyse ce commentaire :\n\n${commentaire}` },
         ],
         temperature: 0.3,
       })
@@ -100,9 +108,9 @@ export async function POST(request: Request) {
       .from('avis')
       .insert({
         commerce_id,
-        user_id: user.id,
-        note,
-        commentaire: texte,
+        user_id: user?.id ?? null,
+        note: rating,
+        commentaire,
         sentiment: analyseIA?.sentiment || 'neutre',
         score_sentiment: analyseIA?.note ? analyseIA.note / 5 : 0,
         is_spam: analyseIA ? !analyseIA.pertinent : false,
