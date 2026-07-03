@@ -46,7 +46,6 @@ function PhotoGallery({ photos: fallbackPhotos, name, categorieSlug }: { photos:
           priority
           sizes="(max-width: 1024px) 100vw, 66vw"
           className="object-cover"
-          unoptimized
         />
       </div>
       {photos.length > 1 && (
@@ -59,7 +58,7 @@ function PhotoGallery({ photos: fallbackPhotos, name, categorieSlug }: { photos:
                 selected === i ? 'border-stone-900' : 'border-transparent'
               }`}
             >
-              <Image src={photo} alt="" fill sizes="96px" className="object-cover" unoptimized />
+              <Image src={photo} alt="" fill sizes="96px" className="object-cover" />
             </button>
           ))}
         </div>

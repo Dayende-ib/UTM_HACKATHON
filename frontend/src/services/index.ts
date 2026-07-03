@@ -12,7 +12,5 @@ export { groqService } from './groq.service';
 export { whatsappService } from './whatsapp.service';
 export { adminService } from './admin.service';
 export type { AdminStats } from './admin.service';
-export { statistiquesService } from './statistiques.service';
-export type { StatistiqueItem, PeriodStats } from './statistiques.service';
 export { utilisateurService } from './utilisateur.service';
 export type { UpdateProfileData, UpdatedProfile } from './utilisateur.service';

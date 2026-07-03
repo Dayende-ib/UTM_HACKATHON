@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/toast';
 import { useVoiceSearch } from '@/hooks/useVoiceSearch';
 import { resolveCategoryId } from '@/utils/voice-search';
 import type { Categorie } from '@/types/commerce';
+import PwaInstallButton from '@/components/layout/pwa-install-button';
 
 const navLinks = [
   { href: ROUTES.HOME, label: 'Accueil' },
@@ -82,7 +83,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href={ROUTES.HOME} className="flex items-center">
-            <Image src="/logo_zoom.png" alt="ArtisanBF" width={40} height={40} className="h-10 w-10 object-contain" />
+            <Image src="/logo_zoom.png" alt="ArtisanBF" width={40} height={40} className="h-10 w-10 object-contain" priority />
           </Link>
 
           <nav className="hidden md:flex items-center gap-7">
@@ -100,6 +101,8 @@ export default function Header({ user, onLogout }: HeaderProps) {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            <PwaInstallButton className="hidden sm:inline-flex" />
+
             <button
               type="button"
               onClick={handleVoiceClick}
@@ -134,7 +137,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
                   className="flex items-center gap-2 rounded-md py-1 pl-1 pr-2 hover:bg-stone-100 transition-colors"
                 >
                   {user.avatar ? (
-                    <Image src={user.avatar} alt={user.prenom} width={28} height={28} className="h-7 w-7 rounded-md object-cover" unoptimized />
+                    <Image src={user.avatar} alt={user.prenom} width={28} height={28} className="h-7 w-7 rounded-md object-cover" />
                   ) : (
                     <div className="h-7 w-7 rounded-md bg-stone-900 flex items-center justify-center">
                       <span className="text-xs font-semibold text-white">
@@ -220,6 +223,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
               <Heart className="h-4 w-4" />
               Favoris
             </Link>
+            <PwaInstallButton className="w-full mt-1" />
             {!user && (
               <Link
                 href={ROUTES.CONNEXION}

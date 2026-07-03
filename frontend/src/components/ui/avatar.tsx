@@ -60,7 +60,6 @@ function Avatar({
           height={sizePx[size]}
           className={["rounded-md object-cover", sizeStyles[size]].join(" ")}
           onError={() => setImgError(true)}
-          unoptimized
         />
       ) : (
         <div

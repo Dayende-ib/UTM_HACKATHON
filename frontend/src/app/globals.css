@@ -200,8 +200,8 @@
   --color-info:      var(--color-info-500);
 
   /* Fonts */
-  --font-sans: 'Inter', var(--font-geist-sans), system-ui, -apple-system, sans-serif;
-  --font-mono: var(--font-geist-mono), 'SF Mono', monospace;
+  --font-sans: system-ui, -apple-system, sans-serif;
+  --font-mono: 'SF Mono', monospace;
 }
 
 /* ============================================================

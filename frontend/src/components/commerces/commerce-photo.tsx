@@ -22,8 +22,6 @@ interface CommercePhotoProps {
  * Rendu via `next/image` en mode `fill` : le `className` reçu (taille +
  * arrondis) est porté par le conteneur relatif, ce qui couvre aussi bien
  * les cartes plein-largeur que les vignettes de taille fixe.
- * `unoptimized` : les sources sont externes/variables (Pexels ou URLs DB),
- * on évite ainsi toute erreur de domaine non autorisé.
  */
 export function CommercePhoto({
   categorieSlug,
@@ -57,7 +55,6 @@ export function CommercePhoto({
         sizes="(max-width: 640px) 100vw, 400px"
         className="object-cover"
         onError={onError}
-        unoptimized
       />
     </span>
   );

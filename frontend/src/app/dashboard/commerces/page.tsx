@@ -456,7 +456,7 @@ export default function CommercesPage() {
                 <div className="flex flex-wrap gap-2">
                   {formData.photos.map((url) => (
                     <div key={url} className="relative h-16 w-16 rounded-md overflow-hidden border border-stone-200 group">
-                      <Image src={url} alt="" fill sizes="64px" className="object-cover" unoptimized />
+                      <Image src={url} alt="" fill sizes="64px" className="object-cover" />
                       <button
                         type="button"
                         onClick={() => removePhoto(url)}

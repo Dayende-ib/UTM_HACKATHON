@@ -92,7 +92,7 @@ export default function ProfilPage() {
         <div className="flex items-center gap-4 mb-6">
           <div className="relative">
             {user?.avatar ? (
-              <Image src={user.avatar} alt={user.prenom} width={64} height={64} className="h-16 w-16 rounded-md object-cover" unoptimized />
+              <Image src={user.avatar} alt={user.prenom} width={64} height={64} className="h-16 w-16 rounded-md object-cover" />
             ) : (
               <div className="h-16 w-16 rounded-md bg-stone-900 flex items-center justify-center">
                 <span className="text-xl font-semibold text-white">

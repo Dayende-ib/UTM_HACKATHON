@@ -1,6 +1,16 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+function resolveSupabaseHostname(): string | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) return null;
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
+  }
+}
+
 function resolveBackendUrl(): string | null {
   const configured = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -32,15 +42,37 @@ function resolveBackendUrl(): string | null {
   }
 }
 
+const supabaseHostname = resolveSupabaseHostname();
+
 const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname, '..'),
   },
   images: {
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       { protocol: 'https', hostname: 'images.pexels.com' },
       { protocol: 'https', hostname: 'placehold.co' },
+      ...(supabaseHostname
+        ? [{ protocol: 'https' as const, hostname: supabaseHostname, pathname: '/storage/v1/object/public/**' }]
+        : []),
     ],
+  },
+  async headers() {
+    return [
+      {
+        source: '/icons/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
+        source: '/apple-touch-icon.png',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
+        source: '/sw.js',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }],
+      },
+    ];
   },
   async rewrites() {
     const backend = resolveBackendUrl();

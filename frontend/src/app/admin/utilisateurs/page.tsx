@@ -121,7 +121,7 @@ export default function UtilisateursPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       {user.avatar ? (
-                        <Image src={user.avatar} alt={user.prenom} width={36} height={36} className="h-9 w-9 rounded-lg object-cover ring-2 ring-stone-100" unoptimized />
+                        <Image src={user.avatar} alt={user.prenom} width={36} height={36} className="h-9 w-9 rounded-lg object-cover ring-2 ring-stone-100" />
                       ) : (
                         <div className="h-9 w-9 rounded-md bg-stone-900 flex items-center justify-center">
                           <span className="text-xs font-semibold text-white">
