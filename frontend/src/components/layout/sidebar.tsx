@@ -19,6 +19,7 @@ import {
   Heart,
   Search,
   Star,
+  Home,
 } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 
@@ -65,7 +66,7 @@ export default function Sidebar({ role, user, onLogout }: SidebarProps) {
 
   return (
     <aside
-      className={`hidden lg:flex flex-col bg-white border-r border-stone-200 h-[calc(100vh-4rem)] sticky top-16 transition-[width] duration-200 ${
+      className={`flex flex-col bg-white border-r border-stone-200 h-[calc(100vh-4rem)] sticky top-16 pb-16 lg:pb-0 transition-[width] duration-200 ${
         collapsed ? 'w-[64px]' : 'w-60'
       }`}
     >
@@ -91,6 +92,16 @@ export default function Sidebar({ role, user, onLogout }: SidebarProps) {
       </nav>
 
       <div className="border-t border-stone-200 p-3">
+        <Link
+          href={ROUTES.HOME}
+          className={`flex items-center gap-3 px-3 py-2 mb-2 rounded-md text-sm font-medium text-stone-500 hover:bg-stone-50 hover:text-stone-900 transition-colors ${
+            collapsed ? 'justify-center' : ''
+          }`}
+          title={collapsed ? 'Retour au site' : undefined}
+        >
+          <Home className="h-[18px] w-[18px] flex-shrink-0" />
+          {!collapsed && <span>Retour au site</span>}
+        </Link>
         {user && (
           <div className={`flex items-center gap-2.5 ${collapsed ? 'justify-center' : ''}`}>
             {user.avatar ? (

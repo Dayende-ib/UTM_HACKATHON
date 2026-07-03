@@ -7,6 +7,7 @@ import { Menu, X } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { ROUTES } from '@/constants/routes';
 import Sidebar from '@/components/layout/sidebar';
+import AdminMobileNav from '@/components/layout/admin-mobile-nav';
 
 export default function AdminLayout({
   children,
@@ -69,7 +70,7 @@ export default function AdminLayout({
           />
         )}
 
-        <div className={`fixed inset-y-0 left-0 z-40 lg:hidden transition-transform duration-200 ${
+        <div className={`fixed inset-y-0 left-0 z-[45] lg:hidden transition-transform duration-200 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
           <div className="h-full">
@@ -81,10 +82,11 @@ export default function AdminLayout({
           <Sidebar role="admin" user={user} onLogout={handleLogout} />
         </div>
 
-        <main className="flex-1 min-h-[calc(100vh-4rem)] p-6 lg:p-8 bg-stone-50">
+        <main className="flex-1 min-h-[calc(100vh-4rem)] p-6 lg:p-8 bg-stone-50 pb-24 lg:pb-8">
           {children}
         </main>
       </div>
+      <AdminMobileNav onMore={() => setSidebarOpen(true)} />
     </div>
   );
 }

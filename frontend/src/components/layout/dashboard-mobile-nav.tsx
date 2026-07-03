@@ -30,7 +30,7 @@ export default function DashboardMobileNav({ role }: DashboardMobileNavProps) {
   const links = role === 'artisan' ? artisanLinks : citoyenLinks;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-stone-200 lg:hidden pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-stone-200 lg:hidden pb-[env(safe-area-inset-bottom)]">
       <div className={`grid h-16 ${links.length === 4 ? 'grid-cols-4' : 'grid-cols-5'}`}>
         {links.map((link) => {
           const isActive = link.href === ROUTES.DASHBOARD

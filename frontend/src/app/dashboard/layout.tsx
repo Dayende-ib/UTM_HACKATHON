@@ -67,7 +67,7 @@ export default function DashboardLayout({
           />
         )}
 
-        <div className={`fixed inset-y-0 left-0 z-40 lg:hidden transition-transform duration-200 ${
+        <div className={`fixed inset-y-0 left-0 z-[45] lg:hidden transition-transform duration-200 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
           <div className="h-full">
