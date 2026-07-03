@@ -1,31 +1,91 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
 import { utilisateurService } from '@/services/utilisateur.service';
 import { useToast } from '@/components/ui/toast';
-import { Camera, Lock, Trash2, Save, Loader2, Store, ArrowRight } from 'lucide-react';
+import { Avatar } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Modal } from '@/components/ui/modal';
+import {
+  User,
+  ShieldCheck,
+  LogOut,
+  Store,
+  ArrowRight,
+  Save,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
+
+const ROLE_LABEL: Record<string, string> = {
+  citoyen: 'Citoyen',
+  artisan: 'Artisan',
+  admin: 'Administrateur',
+};
+
+const inputClass =
+  'w-full h-10 px-3 border border-stone-300 rounded-md text-sm outline-none focus:ring-1 focus:ring-stone-900 focus:border-stone-900';
+
+function Section({
+  icon: Icon,
+  title,
+  description,
+  accent = 'bg-stone-900',
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  accent?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-lg border border-stone-200 bg-white p-6">
+      <div className="flex items-start gap-3 mb-5">
+        <div className={`h-9 w-9 rounded-md ${accent} text-white flex items-center justify-center shrink-0`}>
+          <Icon className="h-4.5 w-4.5" />
+        </div>
+        <div>
+          <h2 className="text-base font-semibold text-stone-900">{title}</h2>
+          <p className="text-sm text-stone-500 mt-0.5">{description}</p>
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
 
 export default function ProfilPage() {
   const { user, logout, updateUser } = useAuthStore();
   const { toast } = useToast();
-  const [form, setForm] = useState({
-    prenom: user?.prenom || '',
-    nom: user?.nom || '',
-    telephone: user?.telephone || '',
-  });
-  const [passwords, setPasswords] = useState({
-    newPass: '',
-    confirmPassword: '',
-  });
+
+  const initialForm = useMemo(
+    () => ({
+      prenom: user?.prenom || '',
+      nom: user?.nom || '',
+      telephone: user?.telephone || '',
+    }),
+    [user]
+  );
+  const [form, setForm] = useState(initialForm);
+  const isDirty =
+    form.prenom !== initialForm.prenom ||
+    form.nom !== initialForm.nom ||
+    form.telephone !== initialForm.telephone;
+
+  const [passwords, setPasswords] = useState({ newPass: '', confirmPassword: '' });
+  const [showPasswords, setShowPasswords] = useState(false);
+  const passwordTooShort = passwords.newPass.length > 0 && passwords.newPass.length < 6;
+  const passwordsMismatch =
+    passwords.confirmPassword.length > 0 && passwords.newPass !== passwords.confirmPassword;
+
   const [saving, setSaving] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [becomingArtisan, setBecomingArtisan] = useState(false);
-
-  const inputClass =
-    'w-full h-10 px-3 border border-stone-300 rounded-md text-sm outline-none focus:ring-1 focus:ring-stone-900 focus:border-stone-900';
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
   const handleProfileSave = async () => {
     if (!user) return;
@@ -47,11 +107,11 @@ export default function ProfilPage() {
 
   const handlePasswordChange = async () => {
     if (!user) return;
-    if (passwords.newPass.length < 6) {
+    if (passwordTooShort || passwords.newPass.length === 0) {
       toast('error', 'Le mot de passe doit contenir au moins 6 caractères.');
       return;
     }
-    if (passwords.newPass !== passwords.confirmPassword) {
+    if (passwordsMismatch) {
       toast('error', 'Les mots de passe ne correspondent pas.');
       return;
     }
@@ -85,28 +145,17 @@ export default function ProfilPage() {
     <div className="max-w-2xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-stone-900 tracking-tight">Mon profil</h1>
-        <p className="text-stone-500 text-sm mt-1.5">Gérez vos informations personnelles</p>
+        <p className="text-stone-500 text-sm mt-1.5">Gérez vos informations personnelles et la sécurité de votre compte</p>
       </div>
 
-      <div className="rounded-lg border border-stone-200 p-6">
+      <Section icon={User} title="Informations personnelles" description="Votre identité sur ArtisanBF">
         <div className="flex items-center gap-4 mb-6">
-          <div className="relative">
-            {user?.avatar ? (
-              <Image src={user.avatar} alt={user.prenom} width={64} height={64} className="h-16 w-16 rounded-md object-cover" />
-            ) : (
-              <div className="h-16 w-16 rounded-md bg-stone-900 flex items-center justify-center">
-                <span className="text-xl font-semibold text-white">
-                  {user?.prenom[0]}{user?.nom[0]}
-                </span>
-              </div>
-            )}
-            <button className="absolute -bottom-1 -right-1 p-1.5 bg-stone-900 text-white rounded-full hover:bg-stone-800">
-              <Camera className="h-3 w-3" />
-            </button>
-          </div>
+          <Avatar src={user?.avatar} alt={user?.prenom || ''} name={`${user?.prenom || ''} ${user?.nom || ''}`} size="lg" />
           <div>
-            <h3 className="font-medium text-stone-900">{user?.prenom} {user?.nom}</h3>
-            <p className="text-sm text-stone-500 capitalize">{user?.role}</p>
+            <p className="font-medium text-stone-900">{user?.prenom} {user?.nom}</p>
+            <Badge variant="outline" size="sm" className="mt-1">
+              {user ? ROLE_LABEL[user.role] || user.role : ''}
+            </Badge>
           </div>
         </div>
 
@@ -146,111 +195,110 @@ export default function ProfilPage() {
               type="tel"
               value={form.telephone}
               onChange={(e) => setForm((p) => ({ ...p, telephone: e.target.value }))}
+              placeholder="+226 XX XX XX XX"
               className={inputClass}
             />
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleProfileSave}
-              disabled={saving}
-              className="flex items-center gap-2 h-9 px-4 bg-stone-900 hover:bg-stone-800 text-white font-medium rounded-md text-sm transition-colors disabled:opacity-50"
-            >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          <div className="flex items-center gap-3 pt-1">
+            <Button onClick={handleProfileSave} disabled={!isDirty || saving} loading={saving}>
+              <Save className="h-4 w-4" />
               Enregistrer
-            </button>
+            </Button>
+            {isDirty && !saving && (
+              <Button variant="ghost" onClick={() => setForm(initialForm)}>
+                Annuler
+              </Button>
+            )}
           </div>
         </div>
-      </div>
+      </Section>
 
       {user?.role === 'citoyen' && (
-        <div className="rounded-lg border border-stone-200 bg-white p-6">
-          <div className="flex items-start gap-4">
-            <div className="h-10 w-10 rounded-md bg-stone-900 text-white flex items-center justify-center shrink-0">
-              <Store className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-base font-semibold text-stone-900">Devenir artisan</h2>
-              <p className="mt-1 text-sm text-stone-600">
-                Activez votre espace artisan pour publier et gérer vos commerces.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  onClick={handleBecomeArtisan}
-                  disabled={becomingArtisan}
-                  className="inline-flex items-center gap-2 h-9 px-4 bg-stone-900 hover:bg-stone-800 text-white font-medium rounded-md text-sm transition-colors disabled:opacity-50"
-                >
-                  {becomingArtisan ? <Loader2 className="h-4 w-4 animate-spin" /> : <Store className="h-4 w-4" />}
-                  Activer mon compte artisan
-                </button>
-                <a
-                  href={ROUTES.DASHBOARD_COMMERCES}
-                  className="inline-flex items-center gap-2 h-9 px-4 bg-stone-100 hover:bg-stone-200 text-stone-800 font-medium rounded-md text-sm transition-colors"
-                >
-                  Mes commerces
-                  <ArrowRight className="h-4 w-4" />
-                </a>
-              </div>
-            </div>
+        <Section
+          icon={Store}
+          title="Devenir artisan"
+          description="Activez votre espace artisan pour publier et gérer vos commerces"
+          accent="bg-primary-600"
+        >
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={handleBecomeArtisan} disabled={becomingArtisan} loading={becomingArtisan}>
+              <Store className="h-4 w-4" />
+              Activer mon compte artisan
+            </Button>
+            <Button variant="outline" onClick={() => (window.location.href = ROUTES.DASHBOARD_COMMERCES)}>
+              Mes commerces
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           </div>
-        </div>
+        </Section>
       )}
 
-      <div className="rounded-lg border border-stone-200 p-6">
-        <h2 className="text-base font-semibold text-stone-900 mb-4 flex items-center gap-2">
-          <Lock className="h-4 w-4 text-stone-400" />
-          Changer le mot de passe
-        </h2>
+      <Section icon={ShieldCheck} title="Sécurité" description="Changez votre mot de passe">
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-stone-800 mb-1.5">Nouveau mot de passe</label>
-            <input
-              type="password"
-              value={passwords.newPass}
-              onChange={(e) => setPasswords((p) => ({ ...p, newPass: e.target.value }))}
-              className={inputClass}
-            />
+            <div className="relative">
+              <input
+                type={showPasswords ? 'text' : 'password'}
+                value={passwords.newPass}
+                onChange={(e) => setPasswords((p) => ({ ...p, newPass: e.target.value }))}
+                className={`${inputClass} pr-10`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPasswords((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
+                aria-label={showPasswords ? 'Masquer les mots de passe' : 'Afficher les mots de passe'}
+              >
+                {showPasswords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {passwordTooShort && (
+              <p className="text-xs text-error-600 mt-1">Au moins 6 caractères requis.</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-stone-800 mb-1.5">Confirmer le mot de passe</label>
             <input
-              type="password"
+              type={showPasswords ? 'text' : 'password'}
               value={passwords.confirmPassword}
               onChange={(e) => setPasswords((p) => ({ ...p, confirmPassword: e.target.value }))}
               className={inputClass}
             />
+            {passwordsMismatch && (
+              <p className="text-xs text-error-600 mt-1">Les mots de passe ne correspondent pas.</p>
+            )}
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handlePasswordChange}
-              disabled={changingPassword || !passwords.newPass}
-              className="flex items-center gap-2 h-9 px-4 bg-stone-100 hover:bg-stone-200 text-stone-800 font-medium rounded-md text-sm transition-colors disabled:opacity-50"
-            >
-              {changingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-              Changer le mot de passe
-            </button>
-          </div>
+          <Button
+            variant="outline"
+            onClick={handlePasswordChange}
+            disabled={changingPassword || !passwords.newPass || passwordsMismatch}
+            loading={changingPassword}
+          >
+            <ShieldCheck className="h-4 w-4" />
+            Changer le mot de passe
+          </Button>
         </div>
-      </div>
+      </Section>
 
-      <div className="rounded-lg border border-error-200 bg-error-50 p-6">
-        <h2 className="text-base font-semibold text-error-900 mb-2 flex items-center gap-2">
-          <Trash2 className="h-4 w-4" />
-          Zone de danger
-        </h2>
-        <p className="text-sm text-error-700 mb-4">
-          La déconnexion mettra fin à votre session actuelle.
-        </p>
-        <button
-          onClick={() => {
-            if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
-              logout();
-            }
-          }}
-          className="h-9 px-4 bg-error-600 hover:bg-error-700 text-white font-medium rounded-md text-sm transition-colors"
-        >
+      <Section icon={LogOut} title="Compte" description="Gérez votre session">
+        <Button variant="outline" onClick={() => setLogoutModalOpen(true)}>
+          <LogOut className="h-4 w-4" />
           Se déconnecter
-        </button>
-      </div>
+        </Button>
+      </Section>
+
+      <Modal open={logoutModalOpen} onClose={() => setLogoutModalOpen(false)} title="Se déconnecter" size="sm">
+        <p className="text-sm text-stone-600 mb-5">Voulez-vous vraiment mettre fin à votre session ?</p>
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setLogoutModalOpen(false)}>
+            Annuler
+          </Button>
+          <Button variant="danger" onClick={logout}>
+            Se déconnecter
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

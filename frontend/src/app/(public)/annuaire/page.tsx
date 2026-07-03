@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, MapPin, Star, Phone, ChevronLeft, ChevronRight, Map as MapIcon, List, Mic, Loader2, Square, SlidersHorizontal, X, WifiOff } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Map as MapIcon, List, Mic, Loader2, Square, SlidersHorizontal, X, WifiOff } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 import { commerceService } from '@/services/commerce.service';
 import { categorieService } from '@/services/categorie.service';
-import { CommercePhoto } from '@/components/commerces/commerce-photo';
 import { CategoryFilter } from '@/components/commerces/category-filter';
+import { CommerceList } from '@/components/commerces/commerce-list';
 import MapLeaflet from '@/components/maps/map-leaflet';
 import { filterCommerces } from '@/utils/filter-commerces';
 import { resolveCategoryId } from '@/utils/voice-search';
@@ -21,45 +20,6 @@ const cities = ['Toutes', 'Ouagadougou', 'Bobo-Dioulasso', 'Koudougou', 'Banfora
 const ratings = [0, 3, 3.5, 4, 4.5];
 const ITEMS_PER_PAGE = 9;
 
-function ResultCard({ commerce, categories }: { commerce: Commerce; categories: Categorie[] }) {
-  const category = categories.find((c) => c.id === commerce.categorieId);
-  return (
-    <Link
-      href={ROUTES.COMMERCE(commerce.id)}
-      className="group rounded-lg border border-stone-200 overflow-hidden hover:border-stone-400 transition-colors"
-    >
-      <div className="relative h-40 bg-stone-100 overflow-hidden">
-        <CommercePhoto
-          categorieSlug={commerce.categorie?.slug}
-          fallbackSrc={commerce.photos[0]}
-          alt={commerce.nom}
-          className="w-full h-full object-cover"
-        />
-      </div>
-      <div className="p-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-stone-400">{category?.nom}</p>
-        <div className="flex items-center justify-between mt-1 gap-2">
-          <h3 className="font-medium text-stone-900 group-hover:underline truncate">{commerce.nom}</h3>
-          <span className="flex items-center gap-1 text-sm font-medium text-stone-700 shrink-0">
-            <Star className="h-3.5 w-3.5 fill-primary-600 text-primary-600" />
-            {commerce.note}
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5 mt-2 text-sm text-stone-500">
-          <MapPin className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">{commerce.adresse}</span>
-        </div>
-        {commerce.telephone && (
-          <div className="flex items-center gap-1.5 mt-1.5 text-sm text-stone-500">
-            <Phone className="h-3.5 w-3.5 shrink-0" />
-            <span>{commerce.telephone}</span>
-          </div>
-        )}
-      </div>
-    </Link>
-  );
-}
-
 export default function AnnuairePage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,12 +31,13 @@ export default function AnnuairePage() {
   const [showFilters, setShowFilters] = useState(false);
   const [commerces, setCommerces] = useState<Commerce[]>([]);
   const [categories, setCategories] = useState<Categorie[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { isRecording, isProcessing, error, result, startRecording, stopRecording, reset } = useVoiceSearch();
   const isOffline = useOffline();
 
   useEffect(() => {
-    commerceService.getAll().then(setCommerces).catch(console.error);
+    commerceService.getAll().then(setCommerces).catch(console.error).finally(() => setLoading(false));
     categorieService.getAll().then(setCategories).catch(console.error);
   }, []);
 
@@ -149,29 +110,17 @@ export default function AnnuairePage() {
       return acc;
     }, []);
 
+  const hasActiveFilters = Boolean(searchQuery || selectedCategory || selectedCity !== 'Toutes' || minRating > 0);
+  const resetFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory(null);
+    setSelectedCity('Toutes');
+    setMinRating(0);
+    setCurrentPage(1);
+  };
+
   const FilterPanel = () => (
     <div className="space-y-7">
-      <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-400 mb-3">Catégorie</h3>
-        <div className="flex flex-col gap-0.5">
-          <button
-            onClick={() => { setSelectedCategory(null); setCurrentPage(1); }}
-            className={`text-left px-2.5 py-1.5 rounded-md text-sm transition-colors ${!selectedCategory ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'}`}
-          >
-            Toutes
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => { setSelectedCategory(cat.id); setCurrentPage(1); }}
-              className={`text-left px-2.5 py-1.5 rounded-md text-sm transition-colors flex items-center justify-between ${selectedCategory === cat.id ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'}`}
-            >
-              {cat.nom}
-              <span className={selectedCategory === cat.id ? 'text-stone-300' : 'text-stone-400'}>{cat.nombreCommerces}</span>
-            </button>
-          ))}
-        </div>
-      </div>
       <div>
         <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-400 mb-3">Ville</h3>
         <div className="flex flex-wrap gap-1.5">
@@ -276,8 +225,13 @@ export default function AnnuairePage() {
           {/* Results */}
           <div>
             <div className="flex items-center justify-between mb-5">
-              <p className="text-sm text-stone-500 flex items-center gap-1.5">
+              <p className="text-sm text-stone-500 flex items-center gap-1.5 flex-wrap">
                 <span className="font-medium text-stone-900">{filtered.length}</span> résultat{filtered.length !== 1 ? 's' : ''}
+                {hasActiveFilters && (
+                  <button onClick={resetFilters} className="text-stone-900 underline underline-offset-2 hover:text-stone-600">
+                    Réinitialiser les filtres
+                  </button>
+                )}
                 {isOffline && (
                   <span className="inline-flex items-center gap-1 text-primary-600">
                     <WifiOff className="h-3 w-3" />
@@ -309,18 +263,8 @@ export default function AnnuairePage() {
                 }))}
                 onMarkerClick={(id) => router.push(ROUTES.COMMERCE(id))}
               />
-            ) : paginated.length === 0 ? (
-              <div className="text-center py-20 border border-dashed border-stone-300 rounded-lg">
-                <MapPin className="h-8 w-8 text-stone-300 mx-auto mb-4" />
-                <h3 className="text-base font-semibold text-stone-900 mb-1">Aucun résultat</h3>
-                <p className="text-sm text-stone-500">Essayez de modifier vos critères de recherche.</p>
-              </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {paginated.map((commerce) => (
-                  <ResultCard key={commerce.id} commerce={commerce} categories={categories} />
-                ))}
-              </div>
+              <CommerceList commerces={paginated} loading={loading} />
             )}
 
             {!showMap && totalPages > 1 && (
