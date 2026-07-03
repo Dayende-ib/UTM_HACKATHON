@@ -68,7 +68,7 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
   };
 
   return (
-    <div className="relative">
+    <div className="relative min-w-0">
       <button
         onClick={() => scroll("left")}
         className="absolute left-0 top-1/2 z-10 -translate-y-1/2 rounded-md bg-white p-1.5 border border-stone-300 hover:bg-stone-50 transition-colors"

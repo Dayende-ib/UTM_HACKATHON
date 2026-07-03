@@ -81,7 +81,7 @@ export default function DashboardLayout({
           <Sidebar role={user.role === 'artisan' ? 'artisan' : 'citoyen'} user={user} onLogout={handleLogout} />
         </div>
 
-        <main className="flex-1 min-h-[calc(100vh-4rem)] p-6 lg:p-8 bg-stone-50 pb-24 lg:pb-8">
+        <main className="flex-1 min-w-0 min-h-[calc(100vh-4rem)] p-6 lg:p-8 bg-stone-50 pb-24 lg:pb-8">
           {children}
         </main>
       </div>
